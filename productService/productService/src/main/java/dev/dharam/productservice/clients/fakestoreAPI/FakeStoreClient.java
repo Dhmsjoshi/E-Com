@@ -2,6 +2,8 @@ package dev.dharam.productservice.clients.fakestoreAPI;
 
 import dev.dharam.productservice.dtos.CreateProductRequestDto;
 import dev.dharam.productservice.clients.fakestoreAPI.fakeStoreDtos.FakeStoreProductDto;
+import dev.dharam.productservice.dtos.UpdateCategoryRequestDto;
+import dev.dharam.productservice.dtos.UpdateProductRequestDto;
 import dev.dharam.productservice.exceptions.ResourceNotFoundException;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpMethod;
@@ -77,11 +79,11 @@ public class FakeStoreClient {
     }
 
 
-    public FakeStoreProductDto updateProduct(CreateProductRequestDto createProductRequestDto, Long productId) {
+    public FakeStoreProductDto updateProduct(UpdateProductRequestDto requestDto, Long productId) {
         ResponseEntity<FakeStoreProductDto> response = requestForEntity(
                 HttpMethod.PATCH,
                 FAKE_STORE_PRODUCT_URL+"/{id}",
-                createProductRequestDto,
+                requestDto,
                 FakeStoreProductDto.class,
                 productId
         );
@@ -91,18 +93,18 @@ public class FakeStoreClient {
     }
 
 
-    public FakeStoreProductDto replaceProduct( CreateProductRequestDto createProductRequestDto,
-                                              Long productId ){
-        ResponseEntity<FakeStoreProductDto> response = requestForEntity(
-                HttpMethod.PUT,
-                FAKE_STORE_PRODUCT_URL+"/{id}",
-                createProductRequestDto,
-                FakeStoreProductDto.class,
-                productId
-        );
-
-        return response.getBody();
-    };
+//    public FakeStoreProductDto replaceProduct( UpdateProductRequestDto requestDto,
+//                                              Long productId ){
+//        ResponseEntity<FakeStoreProductDto> response = requestForEntity(
+//                HttpMethod.PUT,
+//                FAKE_STORE_PRODUCT_URL+"/{id}",
+//                requestDto,
+//                FakeStoreProductDto.class,
+//                productId
+//        );
+//
+//        return response.getBody();
+//    };
 
 
     public String deleteProduct(Long productId) {

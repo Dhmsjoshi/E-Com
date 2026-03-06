@@ -1,6 +1,6 @@
 package dev.dharam.productservice.repositories;
 
-import dev.dharam.productservice.models.Product;
+import dev.dharam.productservice.models.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,24 +11,21 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product,Long> {
+public interface CategoryRepository extends JpaRepository<Category,Long> {
 
     @Override
-    Optional<Product> findById(Long aLong);
+    Optional<Category> findById(Long aLong);
 
 
-    Optional<Product> findByTitle(String title);
-
-    @Override
-    List<Product> findAll();
+    Optional<Category> findByName(String categoryName);
 
     @Override
-    Product save(Product product);
+    List<Category> findAll();
 
     @Override
-    boolean existsById(Long productId);
+    Category save(Category category);
 
-
-    @Override
-    void delete(Product entity);
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM Category c WHERE c.id = ?1")
+    int deleteByCategoryId(Long id);
 }

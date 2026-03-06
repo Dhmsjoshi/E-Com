@@ -1,9 +1,11 @@
-package dev.dharam.productservice.service;
+package dev.dharam.productservice.service.productservice;
 
 import dev.dharam.productservice.clients.fakestoreAPI.FakeStoreClient;
 import dev.dharam.productservice.dtos.CreateProductRequestDto;
 import dev.dharam.productservice.clients.fakestoreAPI.fakeStoreDtos.FakeStoreProductDto;
 import dev.dharam.productservice.dtos.ProductResponseDto;
+import dev.dharam.productservice.dtos.UpdateCategoryRequestDto;
+import dev.dharam.productservice.dtos.UpdateProductRequestDto;
 import dev.dharam.productservice.exceptions.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +26,7 @@ public class FakeStoreProductServiceImpl implements ProductService{
        List<FakeStoreProductDto> fakeStoreProductDtoList = fakeStoreClient.getAllProducts();
         List<ProductResponseDto> products = new ArrayList<>();
         for(FakeStoreProductDto dto: fakeStoreProductDtoList){
-            products.add(ProductResponseDto.from(dto));
+            products.add(ProductResponseDto.fromFakeStoreDto(dto));
         }
         return products;
     }
@@ -32,31 +34,31 @@ public class FakeStoreProductServiceImpl implements ProductService{
     @Override
     public ProductResponseDto getProductById(Long productId) throws ResourceNotFoundException {
        FakeStoreProductDto fakeStoreProductDto = fakeStoreClient.getProductById(productId);
-       return ProductResponseDto.from(fakeStoreProductDto);
+       return ProductResponseDto.fromFakeStoreDto(fakeStoreProductDto);
 
     }
 
     @Override
     public ProductResponseDto createProduct( CreateProductRequestDto requestDto) throws ResourceNotFoundException {
         FakeStoreProductDto fakeStoreProductDto = fakeStoreClient.createProduct(requestDto);
-        return ProductResponseDto.from(fakeStoreProductDto);
+        return ProductResponseDto.fromFakeStoreDto(fakeStoreProductDto);
 
     }
 
     @Override
-    public ProductResponseDto updateProduct(CreateProductRequestDto createProductRequestDto, Long productId) {
-        FakeStoreProductDto fakeStoreProductDto = fakeStoreClient.updateProduct(createProductRequestDto,productId);
-        return ProductResponseDto.from(fakeStoreProductDto);
+    public ProductResponseDto updateProduct(UpdateProductRequestDto requestDto, Long productId) {
+        FakeStoreProductDto fakeStoreProductDto = fakeStoreClient.updateProduct(requestDto,productId);
+        return ProductResponseDto.fromFakeStoreDto(fakeStoreProductDto);
 
 
     }
 
-    @Override
-    public ProductResponseDto replaceProduct( CreateProductRequestDto createProductRequestDto,
-                                              Long productId ){
-        FakeStoreProductDto fakeStoreProductDto = fakeStoreClient.replaceProduct(createProductRequestDto,productId);
-        return ProductResponseDto.from(fakeStoreProductDto);
-    };
+//    @Override
+//    public ProductResponseDto replaceProduct( UpdateProductRequestDto requestDto,
+//                                              Long productId ){
+//        FakeStoreProductDto fakeStoreProductDto = fakeStoreClient.replaceProduct(requestDto,productId);
+//        return ProductResponseDto.fromFakeStoreDto(fakeStoreProductDto);
+//    };
 
     @Override
     public String deleteProduct(Long productId) {

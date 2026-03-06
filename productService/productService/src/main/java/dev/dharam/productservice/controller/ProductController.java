@@ -2,9 +2,11 @@ package dev.dharam.productservice.controller;
 
 import dev.dharam.productservice.dtos.CreateProductRequestDto;
 import dev.dharam.productservice.dtos.ProductResponseDto;
-import dev.dharam.productservice.exceptions.ExceptionResponseDto;
+import dev.dharam.productservice.dtos.UpdateProductRequestDto;
 import dev.dharam.productservice.exceptions.ResourceNotFoundException;
-import dev.dharam.productservice.service.ProductService;
+import dev.dharam.productservice.service.productservice.ProductService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,13 +19,14 @@ public class ProductController {
 
     private final ProductService productService;
 
-    public ProductController(ProductService productService) {
+    @Autowired
+    public ProductController(@Qualifier("SelfProductService") ProductService productService) {
         this.productService = productService;
     }
 
     @GetMapping
-    public List<ProductResponseDto> getAllProducts(){
-        return productService.getAllProducts();
+    public ResponseEntity<List<ProductResponseDto>> getAllProducts(){
+        return new ResponseEntity<>(productService.getAllProducts(),HttpStatus.OK);
     }
 
     @GetMapping("/{productId}")
@@ -37,29 +40,24 @@ public class ProductController {
 
     @PostMapping
     public ResponseEntity<ProductResponseDto> createProduct(@RequestBody CreateProductRequestDto requestDto){
-        try{
-            ProductResponseDto productDto = productService.createProduct(requestDto);
-            return new ResponseEntity<>(productDto, HttpStatus.OK);
-        }catch (ResourceNotFoundException e){
-            return ResponseEntity.badRequest().build();
-        }
+        return new ResponseEntity<>(productService.createProduct(requestDto), HttpStatus.CREATED);
     }
 
     @PatchMapping("/{productId}")
-    public ProductResponseDto updateProduct(@RequestBody CreateProductRequestDto createProductRequestDto,
+    public ResponseEntity<ProductResponseDto> updateProduct(@RequestBody UpdateProductRequestDto rquestDto,
                                 @PathVariable("productId") Long productId ){
-        return productService.updateProduct(createProductRequestDto, productId);
+        return new ResponseEntity<>(productService.updateProduct(rquestDto, productId),HttpStatus.OK);
     }
 
-    @PutMapping("/{productId}")
-    public ProductResponseDto replaceProduct(@RequestBody CreateProductRequestDto createProductRequestDto,
-                                            @PathVariable("productId") Long productId ){
-        return productService.replaceProduct(createProductRequestDto, productId);
-    }
+//    @PutMapping("/{productId}")
+//    public ProductResponseDto replaceProduct(@RequestBody UpdateProductRequestDto rquestDto,
+//                                            @PathVariable("productId") Long productId ){
+//        return productService.replaceProduct(rquestDto, productId);
+//    }
 
     @DeleteMapping("/{productId}")
-    public String deleteProduct(@PathVariable("productId") Long productId){
-        return "Product deleted with id: "+productId;
+    public ResponseEntity<String> deleteProduct(@PathVariable("productId") Long productId){
+        return new ResponseEntity<>(productService.deleteProduct(productId),HttpStatus.OK);
     }
 
 
