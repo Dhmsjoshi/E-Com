@@ -11,16 +11,16 @@ public class DtoMapper {
 
     public Category toCategoryEntity(CategoryResponseDto categoryResponseDto) {
         Category category = new Category();
-        category.setId(categoryResponseDto.getId());
-        category.setDescription(categoryResponseDto.getDescription());
+        category.setId(categoryResponseDto.id());
+        category.setDescription(categoryResponseDto.description());
         return category;
     }
 
     public Product toProductEntity(ProductResponseDto productResponseDto){
         Product product = new Product();
-        product.setImageUrl(productResponseDto.getImageUrl());
-        product.setDescription(productResponseDto.getDescription());
-        product.setPrice(productResponseDto.getPrice());
+        product.setImageUrl(productResponseDto.imageUrl());
+        product.setDescription(productResponseDto.description());
+        product.setPrice(productResponseDto.price());
         return product;
 
     }

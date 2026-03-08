@@ -17,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.springframework.data.util.ClassUtils.ifPresent;
+
 @Service("SelfProductService")
 public class SelfProductServiceImpl implements ProductService{
 
@@ -35,13 +38,8 @@ public class SelfProductServiceImpl implements ProductService{
 
     @Override
     public List<ProductResponseDto> getAllProducts() {
-        List<Product> products = productRepository.findAll();
-        List<ProductResponseDto> productResponseDtoList = new ArrayList<>();
-        for(Product product : products){
-            productResponseDtoList.add(ProductResponseDto.from(product));
-        }
-
-        return productResponseDtoList;
+        return productRepository.findAll().stream().map(ProductResponseDto::from)
+                .toList();
     }
 
     @Override
@@ -55,25 +53,24 @@ public class SelfProductServiceImpl implements ProductService{
     }
 
     @Override
+    @Transactional
     public ProductResponseDto createProduct( CreateProductRequestDto requestDto){
-        if(requestDto.getCategoryId() == null){
-            throw new ResourceNotFoundException("Category id is null");
-        }
-        productRepository.findByTitle(requestDto.getTitle()).ifPresent(
+
+        productRepository.findByTitle(requestDto.title()).ifPresent(
                 product -> {
-                    throw new ResourceAlreadyExistsException("Product with title " + requestDto.getTitle().toUpperCase() + " already exists");
+                    throw new ResourceAlreadyExistsException("Product with title " + requestDto.title() + " already exists");
                 }
         );
 
-        CategoryResponseDto categoryResponseDto = categoryService.getCategoryById(requestDto.getCategoryId());
+        CategoryResponseDto categoryResponseDto = categoryService.getCategoryById(requestDto.categoryId());
         Category productCategory = dtoMapper.toCategoryEntity(categoryResponseDto);
 
         Product product = new Product();
-        product.setTitle(requestDto.getTitle());
-        product.setDescription(requestDto.getDescription());
-        product.setPrice(requestDto.getPrice());
+        product.setTitle(requestDto.title());
+        product.setDescription(requestDto.description());
+        product.setPrice(requestDto.price());
         product.setCategory(productCategory);
-        product.setImageUrl(requestDto.getImageUrl());
+        product.setImageUrl(requestDto.imageUrl());
 
         Product savedProduct = productRepository.save(product);
 
@@ -81,35 +78,29 @@ public class SelfProductServiceImpl implements ProductService{
     }
 
     @Override
+    @Transactional
     public ProductResponseDto updateProduct(UpdateProductRequestDto requestDto,
                                             Long productId) {
         Product product= productRepository.findById(productId).orElseThrow(
                 ()->  new ResourceNotFoundException("Product with id: "+productId+" not found!")
         );
-        if(requestDto.getDescription() != null)product.setDescription(requestDto.getDescription());
-        if(requestDto.getPrice() != 0.00)product.setPrice(requestDto.getPrice());
-        if(requestDto.getImageUrl() != null)product.setImageUrl(requestDto.getImageUrl());
-        Product updatedProduct =productRepository.save(product);
+        if(requestDto.description() != null)product.setDescription(requestDto.description());
+        if(requestDto.price() != null && requestDto.price() >= 0)product.setPrice(requestDto.price());
+        if(requestDto.imageUrl() != null)product.setImageUrl(requestDto.imageUrl());
+//        Product updatedProduct =productRepository.save(product);
 
-        return ProductResponseDto.from(updatedProduct);
+        return ProductResponseDto.from(product);
     }
-//    @Override
-//    public ProductResponseDto replaceProduct( UpdateProductRequestDto requestDto,
-//                                              Long productId ){
-//
-//        return null;
-//    };
 
 
     @Override
+    @Transactional
     public String deleteProduct(Long productId) {
-       if(!productRepository.existsById(productId)){
-           throw new ResourceNotFoundException("Product with id: "+productId+" not found!");
-       }
-       productRepository.deleteById(productId);
-       if(!productRepository.existsById(productId)){
-           return "Product with id: "+productId+" deleted successfully!";
-       }
-       return "Could not delete!";
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product with ID: " + productId + " not found!"));
+
+        productRepository.delete(product);
+
+        return "Product with ID: " + productId + " deleted successfully!";
     }
 }

@@ -25,7 +25,11 @@ public interface CategoryRepository extends JpaRepository<Category,Long> {
     @Override
     Category save(Category category);
 
-    @Modifying(clearAutomatically = true)
-    @Query("DELETE FROM Category c WHERE c.id = ?1")
-    int deleteByCategoryId(Long id);
+//    @Modifying(clearAutomatically = true)
+//    @Query("DELETE FROM Category c WHERE c.id = ?1")
+//    int deleteByCategoryId(Long id);
+
+
+    @Override
+    void delete(Category category);
 }

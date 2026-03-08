@@ -50,15 +50,8 @@ public class FakeStoreProductServiceImpl implements ProductService{
         FakeStoreProductDto fakeStoreProductDto = fakeStoreClient.updateProduct(requestDto,productId);
         return ProductResponseDto.fromFakeStoreDto(fakeStoreProductDto);
 
-
     }
 
-//    @Override
-//    public ProductResponseDto replaceProduct( UpdateProductRequestDto requestDto,
-//                                              Long productId ){
-//        FakeStoreProductDto fakeStoreProductDto = fakeStoreClient.replaceProduct(requestDto,productId);
-//        return ProductResponseDto.fromFakeStoreDto(fakeStoreProductDto);
-//    };
 
     @Override
     public String deleteProduct(Long productId) {

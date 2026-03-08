@@ -46,36 +46,39 @@ public class CategoryServiceImpl implements CategoryService{
     }
 
     @Override
+    @Transactional
     public CategoryResponseDto createCategory(CreateCategoryRequestDto requestDto){
-        categoryRepository.findByName(requestDto.getName()).ifPresent(
+        categoryRepository.findByName(requestDto.name()).ifPresent(
                 c-> { throw new ResourceAlreadyExistsException(
-                        "Category with name: "+requestDto.getName()+" already exists!");
+                        "Category with name: "+requestDto.name()+" already exists!");
                 });
         Category category = new Category();
-        category.setName(requestDto.getName());
-        category.setDescription(requestDto.getDescription());
+        category.setName(requestDto.name());
+        category.setDescription(requestDto.description());
         Category savedCategory = categoryRepository.save(category);
         return CategoryResponseDto.from(savedCategory);
     }
 
     @Override
+    @Transactional
     public CategoryResponseDto updateCategory(UpdateCategoryRequestDto requestDto, Long categoryId){
         Category category = categoryRepository.findById(categoryId).orElseThrow(
                 ()-> new ResourceNotFoundException("Category with id:"+categoryId +" not found!")
         );
 
-        category.setDescription(requestDto.getDescription());
-        Category updatedCategory = categoryRepository.save(category);
-        return CategoryResponseDto.from(updatedCategory);
+        if(requestDto.description() != null)category.setDescription(requestDto.description());
+//        Category updatedCategory = categoryRepository.save(category);
+        return CategoryResponseDto.from(category);
     }
 
-    @Transactional
+
     @Override
+    @Transactional
     public String deleteCategory(Long categoryId){
-        int deletedCount = categoryRepository.deleteByCategoryId(categoryId);
-        if(deletedCount == 0){
-            throw new ResourceNotFoundException("Category with id:"+categoryId +" not found!");
-        }
-        return "Category with id:"+categoryId +" has been deleted successfully!";
+        Category category = categoryRepository.findById(categoryId).orElseThrow(
+                ()-> new ResourceNotFoundException("Category with id:"+categoryId +" not found!")
+        );
+        categoryRepository.delete(category);
+        return "Category with id:"+categoryId +" deleted successfully!";
     }
 }

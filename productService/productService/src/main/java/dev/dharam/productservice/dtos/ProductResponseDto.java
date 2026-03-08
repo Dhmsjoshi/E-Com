@@ -6,38 +6,37 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-@Getter
-@Setter
-@ToString
-public class ProductResponseDto {
-    private long id;
-    private String title;
-    private double price;
-    private String description;
-    private String category;
-    private String imageUrl;
 
-    public static ProductResponseDto fromFakeStoreDto(FakeStoreProductDto fakeStoreProductDto){
-        ProductResponseDto productResponseDto = new ProductResponseDto();
-        productResponseDto.setId(fakeStoreProductDto.getId());
-        productResponseDto.setTitle(fakeStoreProductDto.getTitle());
-        productResponseDto.setPrice(fakeStoreProductDto.getPrice());
-        productResponseDto.setDescription(fakeStoreProductDto.getDescription());
-        productResponseDto.setCategory(fakeStoreProductDto.getCategory());
-        productResponseDto.setImageUrl(fakeStoreProductDto.getImage());
-
-        return  productResponseDto;
+public record ProductResponseDto(
+        Long id,
+        String title,
+        Double price,
+        String description,
+        String category,
+        String imageUrl
+) {
+    // Factory method for FakeStore API
+    public static ProductResponseDto fromFakeStoreDto(FakeStoreProductDto fakeStoreProductDto) {
+        return new ProductResponseDto(
+                fakeStoreProductDto.id(),
+                fakeStoreProductDto.title(),
+                fakeStoreProductDto.price(),
+                fakeStoreProductDto.description(),
+                fakeStoreProductDto.category(),
+                fakeStoreProductDto.image()
+        );
     }
 
-    public static ProductResponseDto from(Product product){
-        ProductResponseDto productResponseDto = new ProductResponseDto();
-        productResponseDto.setId(product.getId());
-        productResponseDto.setTitle(product.getTitle());
-        productResponseDto.setPrice(product.getPrice());
-        productResponseDto.setDescription(product.getDescription());
-        productResponseDto.setCategory(product.getCategory().getName());
-        productResponseDto.setImageUrl(product.getImageUrl());
-        return  productResponseDto;
-
+    // Factory method for your Internal Entity
+    public static ProductResponseDto from(Product product) {
+        return new ProductResponseDto(
+                product.getId(),
+                product.getTitle(),
+                product.getPrice(),
+                product.getDescription(),
+                // Assuming your Category entity is not null here
+                product.getCategory() != null ? product.getCategory().getName() : "Uncategorized",
+                product.getImageUrl()
+        );
     }
 }

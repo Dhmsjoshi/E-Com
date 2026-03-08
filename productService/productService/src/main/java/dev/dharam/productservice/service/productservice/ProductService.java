@@ -19,9 +19,5 @@ public interface ProductService {
     public ProductResponseDto updateProduct( UpdateProductRequestDto requestDto,
                                  Long productId );
 
-//    public ProductResponseDto replaceProduct( UpdateProductRequestDto requestDto,
-//                                             Long productId );
-
-
     public String deleteProduct( Long productId);
 }
