@@ -1,12 +1,11 @@
 package dev.dharam.productservice.service.productservice;
 
 import dev.dharam.productservice.clients.fakestoreAPI.FakeStoreClient;
-import dev.dharam.productservice.dtos.CreateProductRequestDto;
+import dev.dharam.productservice.dtos.*;
 import dev.dharam.productservice.clients.fakestoreAPI.fakeStoreDtos.FakeStoreProductDto;
-import dev.dharam.productservice.dtos.ProductResponseDto;
-import dev.dharam.productservice.dtos.UpdateCategoryRequestDto;
-import dev.dharam.productservice.dtos.UpdateProductRequestDto;
 import dev.dharam.productservice.exceptions.ResourceNotFoundException;
+import dev.dharam.productservice.models.Product;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -57,5 +56,20 @@ public class FakeStoreProductServiceImpl implements ProductService{
     public String deleteProduct(Long productId) {
         return fakeStoreClient.deleteProduct(productId);
 
+    }
+
+    @Override
+    public List<ProductResponseDto> getHomePageProducts() {
+        return List.of();
+    }
+
+    @Override
+    public PagedResponse<ProductResponseDto> getProductsByCategoryId(Long categoryId, int pageNum, int pageSize, String sortBy, String direction) {
+        return null;
+    }
+
+    @Override
+    public PagedResponse<ProductResponseDto> searchProducts(ProductSearchCriteria criteria) {
+        return null;
     }
 }

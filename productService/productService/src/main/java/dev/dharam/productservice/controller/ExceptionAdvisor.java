@@ -4,12 +4,14 @@ import dev.dharam.productservice.exceptions.ErrorResponseDto;
 import dev.dharam.productservice.exceptions.ResourceAlreadyExistsException;
 import dev.dharam.productservice.exceptions.ResourceNotFoundException;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -74,5 +76,28 @@ public class ExceptionAdvisor {
                 details
         );
         return new ResponseEntity<>(errorResponseDto, HttpStatus.BAD_REQUEST);
+    }
+
+    // 1. Sorting field error (e.g. sortBy=unknown_column)
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ErrorResponseDto> handleInvalidSortField(PropertyReferenceException ex) {
+        ErrorResponseDto error = new ErrorResponseDto(
+                HttpStatus.BAD_REQUEST.value(),
+                "Could not find based on " + ex.getPropertyName()+" criteria!"
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    // 2. Data Type mismatch (e.g. categoryId=abc instead of 123)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponseDto> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String message = String.format("Parameter '%s' value '%s' is wrong!",
+                ex.getName(), ex.getValue());
+
+        ErrorResponseDto error = new ErrorResponseDto(
+                HttpStatus.BAD_REQUEST.value(),
+                message
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }

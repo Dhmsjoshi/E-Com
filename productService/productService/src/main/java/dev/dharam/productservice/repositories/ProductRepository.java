@@ -1,7 +1,12 @@
 package dev.dharam.productservice.repositories;
 
+import dev.dharam.productservice.models.Category;
 import dev.dharam.productservice.models.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -11,7 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product,Long> {
+public interface ProductRepository extends JpaRepository<Product,Long>, JpaSpecificationExecutor<Product> {
 
     @Override
     Optional<Product> findById(Long aLong);
@@ -31,4 +36,14 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
 
     @Override
     void delete(Product entity);
+
+     Page<Product> findAll(Pageable pageable);
+
+    Optional<Product> findFirstByCategoryAndIsDeletedFalseOrderByCreatedAtDesc(Category category);
+
+    Page<Product> findByCategory_IdAndIsDeletedFalse(Long categoryId, Pageable pageable);
+
+    Page<Product> findAll(Specification spec, Pageable pageable);
+
+
 }

@@ -1,10 +1,7 @@
 package dev.dharam.productservice.controller;
 
-import dev.dharam.productservice.dtos.CreateProductRequestDto;
-import dev.dharam.productservice.dtos.ProductResponseDto;
-import dev.dharam.productservice.dtos.UpdateProductRequestDto;
+import dev.dharam.productservice.dtos.*;
 import dev.dharam.productservice.exceptions.ErrorResponseDto;
-import dev.dharam.productservice.exceptions.ResourceNotFoundException;
 import dev.dharam.productservice.service.productservice.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,10 +10,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -37,14 +36,22 @@ public class ProductController {
         this.productService = productService;
     }
 
-    @GetMapping
-    @Operation(summary = "Get all products", description = "Retrieves a complete list of products.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved the list of products")
-    })
-    public ResponseEntity<List<ProductResponseDto>> getAllProducts(){
-        return new ResponseEntity<>(productService.getAllProducts(),HttpStatus.OK);
+    @GetMapping("/homepage")
+    @Operation(summary = "Get Featured Products", description = "Picks one latest product from each category for the landing page.")
+    public ResponseEntity<List<ProductResponseDto>> getHomePageProducts() {
+        // No params needed from user
+        List<ProductResponseDto> featuredProducts = productService.getHomePageProducts();
+        return ResponseEntity.ok(featuredProducts);
     }
+
+//    @GetMapping
+//    @Operation(summary = "Get all products", description = "Retrieves a complete list of products.")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "Successfully retrieved the list of products")
+//    })
+//    public ResponseEntity<List<ProductResponseDto>> getAllProducts(){
+//        return new ResponseEntity<>(productService.getAllProducts(),HttpStatus.OK);
+//    }
 
     @GetMapping("/{productId}")
     @Operation(summary = "Get product by ID", description = "Fetches detailed information about a specific product using its unique database ID.")
@@ -119,6 +126,24 @@ public class ProductController {
             @Positive(message = "ID must be a positive number")
             Long productId){
         return new ResponseEntity<>(productService.deleteProduct(productId),HttpStatus.OK);
+    }
+
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<PagedResponse<ProductResponseDto>> getProductsByCategory(
+            @PathVariable @NotNull Long categoryId,
+            @RequestParam(defaultValue = "0") int pageNum,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+
+        return ResponseEntity.ok(productService.getProductsByCategoryId(categoryId, pageNum, pageSize, sortBy, direction));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<PagedResponse<ProductResponseDto>> searchInPage(@Valid ProductSearchCriteria criteria) {
+
+        return ResponseEntity.ok(productService.searchProducts(
+                criteria));
     }
 
 

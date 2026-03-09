@@ -1,15 +1,16 @@
 package dev.dharam.productservice.service.productservice;
 
-import dev.dharam.productservice.dtos.CreateProductRequestDto;
-import dev.dharam.productservice.dtos.ProductResponseDto;
-import dev.dharam.productservice.dtos.UpdateProductRequestDto;
+import dev.dharam.productservice.dtos.*;
 import dev.dharam.productservice.exceptions.ResourceNotFoundException;
+import dev.dharam.productservice.models.Product;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
 public interface ProductService {
 
     public List<ProductResponseDto> getAllProducts();
+    List<ProductResponseDto> getHomePageProducts();
 
     public ProductResponseDto getProductById(Long productId);
 
@@ -20,4 +21,8 @@ public interface ProductService {
                                  Long productId );
 
     public String deleteProduct( Long productId);
+    PagedResponse<ProductResponseDto>getProductsByCategoryId(Long categoryId,int pageNum,int pageSize,String sortBy,String direction);
+
+    PagedResponse<ProductResponseDto> searchProducts(ProductSearchCriteria criteria);
+
 }
