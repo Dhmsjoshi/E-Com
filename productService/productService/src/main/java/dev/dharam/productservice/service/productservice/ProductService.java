@@ -21,7 +21,7 @@ public interface ProductService {
                                  Long productId );
 
     public String deleteProduct( Long productId);
-    PagedResponse<ProductResponseDto>getProductsByCategoryId(Long categoryId,int pageNum,int pageSize,String sortBy,String direction);
+    PagedResponse<ProductResponseDto>getProductsByCategory(Long categoryId,int pageNum,int pageSize,String sortBy,String direction);
 
     PagedResponse<ProductResponseDto> searchProducts(ProductSearchCriteria criteria);
 

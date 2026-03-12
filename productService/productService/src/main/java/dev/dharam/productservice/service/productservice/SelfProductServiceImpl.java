@@ -121,15 +121,16 @@ public class SelfProductServiceImpl implements ProductService{
         return "Product with ID: " + productId + " deleted successfully!";
     }
 
+
     @Override
-    public PagedResponse<ProductResponseDto> getProductsByCategoryId(
+    public PagedResponse<ProductResponseDto> getProductsByCategory(
             Long categoryId,
             int pageNum,
             int pageSize,
             String sortBy,
             String direction) {
-        CategoryResponseDto categoryDto =categoryService.getCategoryById(categoryId);
-        Category category = dtoMapper.toCategoryEntity(categoryDto);
+
+        categoryService.existsById(categoryId);
 
         Sort sorting = direction.equalsIgnoreCase("desc")
                 ?Sort.by(sortBy).descending()
@@ -156,6 +157,8 @@ public class SelfProductServiceImpl implements ProductService{
 
     @Override
     public PagedResponse<ProductResponseDto> searchProducts(ProductSearchCriteria criteria) {
+
+        categoryService.existsById(criteria.categoryId());
 
         Sort sorting=criteria.direction().equalsIgnoreCase("desc")
                 ?Sort.by(criteria.sortBy()).descending()

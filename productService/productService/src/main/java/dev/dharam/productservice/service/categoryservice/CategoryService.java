@@ -21,4 +21,5 @@ public interface CategoryService {
     public CategoryResponseDto updateCategory(UpdateCategoryRequestDto requestDto, Long categoryId);;
 
     public String deleteCategory( Long categoryId);
+    void existsById(Long categoryId);
 }

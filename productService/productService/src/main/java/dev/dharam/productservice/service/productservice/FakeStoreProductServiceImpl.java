@@ -64,7 +64,7 @@ public class FakeStoreProductServiceImpl implements ProductService{
     }
 
     @Override
-    public PagedResponse<ProductResponseDto> getProductsByCategoryId(Long categoryId, int pageNum, int pageSize, String sortBy, String direction) {
+    public PagedResponse<ProductResponseDto> getProductsByCategory(Long categoryId, int pageNum, int pageSize, String sortBy, String direction) {
         return null;
     }
 

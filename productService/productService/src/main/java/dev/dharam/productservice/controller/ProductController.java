@@ -129,6 +129,11 @@ public class ProductController {
     }
 
     @GetMapping("/category/{categoryId}")
+    @Operation(summary = "Get products by Category ID", description = "Retrieves a paginated list of products belonging to a specific category.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved products"),
+            @ApiResponse(responseCode = "404", description = "Category not found")
+    })
     public ResponseEntity<PagedResponse<ProductResponseDto>> getProductsByCategory(
             @PathVariable @NotNull Long categoryId,
             @RequestParam(defaultValue = "0") int pageNum,
@@ -136,10 +141,15 @@ public class ProductController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
 
-        return ResponseEntity.ok(productService.getProductsByCategoryId(categoryId, pageNum, pageSize, sortBy, direction));
+        return ResponseEntity.ok(productService.getProductsByCategory(categoryId, pageNum, pageSize, sortBy, direction));
     }
 
     @GetMapping("/search")
+    @Operation(summary = "Search products with filters", description = "Dynamic search using query, category, price range, and pagination.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Search results returned successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid search criteria")
+    })
     public ResponseEntity<PagedResponse<ProductResponseDto>> searchInPage(@Valid ProductSearchCriteria criteria) {
 
         return ResponseEntity.ok(productService.searchProducts(

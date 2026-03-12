@@ -51,13 +51,21 @@ public class CategoryServiceImpl implements CategoryService{
     }
 
     @Override
+    @Cacheable(value = "category_exists", key = "#categoryId")
+    public void existsById(Long categoryId) {
+        if (!categoryRepository.existsById(categoryId)) {
+            throw new ResourceNotFoundException("Category with id:"+categoryId +" not found!");
+        }
+    }
+
+    @Override
     @Transactional
     @CacheEvict(value = "all_categories", allEntries = true)
     public CategoryResponseDto createCategory(CreateCategoryRequestDto requestDto){
-        categoryRepository.findByName(requestDto.name()).ifPresent(
-                c-> { throw new ResourceAlreadyExistsException(
-                        "Category with name: "+requestDto.name()+" already exists!");
-                });
+        if (categoryRepository.existsByName(requestDto.name())) {
+            throw new ResourceAlreadyExistsException(
+                    "Category with name: " + requestDto.name() + " already exists!");
+        }
         Category category = new Category();
         category.setName(requestDto.name());
         category.setDescription(requestDto.description());
