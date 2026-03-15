@@ -5,28 +5,21 @@ import dev.dharam.authservice.dtos.LoginUserRequestDto;
 import dev.dharam.authservice.dtos.SignupUserRequestDto;
 import dev.dharam.authservice.dtos.UserResponseDto;
 import dev.dharam.authservice.service.AuthService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.MultiValueMapAdapter;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
 
-    @Autowired
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
 
     @PostMapping("/signup")
     public ResponseEntity<UserResponseDto> signup(@RequestBody SignupUserRequestDto requestDto){
@@ -34,19 +27,41 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponseDto> login(@RequestBody LoginUserRequestDto requestDto){
-        LoginResponseDto dto = authService.login(requestDto.email(), requestDto.password());
-        String token = dto.token();
-        UserResponseDto user = dto.userResponseDto();
+    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginUserRequestDto requestDto,
+                                                  HttpServletResponse response){
+        LoginResponseDto  loginResponseDto = authService.login(requestDto.email(), requestDto.password());
 
-       MultiValueMapAdapter headers = new MultiValueMapAdapter(new HashMap());
-        headers.add("Authorization", "Bearer " + token);
+        Cookie cookie = new Cookie("refreshToken", loginResponseDto.refreshToken());
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/");
+        cookie.setMaxAge(30*24*60*60); //30 days
 
-        return new ResponseEntity<>(user,headers,HttpStatus.OK);
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok(loginResponseDto);
     }
 
-//    @PostMapping
-//    public ResponseEntity<UserResponseDto> validate(@RequestBody SignupUserRequestDto requestDto){
-//        return null;
-//    }
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@CookieValue(name = "refreshToken",required = false)
+                                             String refreshToken,
+                                         HttpServletResponse response){
+        if(refreshToken != null){
+            authService.logout(refreshToken);
+        }
+        Cookie cookie = new Cookie("refreshToken", null);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok("Logged out successfully");
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<Map<String,String>> refresh(@CookieValue(name = "refreshToken") String refreshToken){
+        String newAccessToken = authService.refreshAccessToken(refreshToken);
+        return ResponseEntity.ok(Map.of("accessToken",newAccessToken));
+    }
 }

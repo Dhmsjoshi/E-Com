@@ -1,8 +1,8 @@
 CREATE TABLE roles (
                        id BINARY(16) NOT NULL,
-                       created_at DATETIME NOT NULL,
-                       updated_at DATETIME NOT NULL,
-                       is_deleted BIT(1) NOT NULL,
+                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                       is_deleted BIT(1) DEFAULT b'0' NOT NULL,
                        name VARCHAR(50) NOT NULL,
                        description VARCHAR(255) NULL,
                        CONSTRAINT pk_roles PRIMARY KEY (id),
@@ -11,25 +11,24 @@ CREATE TABLE roles (
 
 CREATE TABLE users (
                        id BINARY(16) NOT NULL,
-                       created_at DATETIME NOT NULL,
-                       updated_at DATETIME NOT NULL,
-                       is_deleted BIT(1) NOT NULL,
+                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                       is_deleted BIT(1) DEFAULT b'0' NOT NULL,
                        email VARCHAR(255) NOT NULL,
                        password VARCHAR(255) NOT NULL,
                        username VARCHAR(50) NULL,
                        phone_number VARCHAR(20) NULL,
-                       is_email_verified BIT(1) NOT NULL,
+                       is_email_verified BIT(1) DEFAULT b'0' NOT NULL,
                        CONSTRAINT pk_users PRIMARY KEY (id),
                        CONSTRAINT uc_users_email UNIQUE (email),
-                       CONSTRAINT uc_users_username UNIQUE (username),
-                       CONSTRAINT uc_users_phone_number UNIQUE (phone_number)
+                       CONSTRAINT uc_users_username UNIQUE (username)
 );
 
 CREATE TABLE sessions (
                           id BINARY(16) NOT NULL,
-                          created_at DATETIME NOT NULL,
-                          updated_at DATETIME NOT NULL,
-                          is_deleted BIT(1) NOT NULL,
+                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                          is_deleted BIT(1) DEFAULT b'0' NOT NULL,
                           token VARCHAR(1000) NOT NULL,
                           expiring_at DATETIME NOT NULL,
                           user_id BINARY(16) NOT NULL,

@@ -5,4 +5,4 @@ import org.springframework.util.MultiValueMapAdapter;
 
 import java.util.Set;
 
-public record LoginResponseDto(String token,UserResponseDto userResponseDto) {};
+public record LoginResponseDto(String jwtToken,String refreshToken,UserResponseDto userResponseDto) {};
