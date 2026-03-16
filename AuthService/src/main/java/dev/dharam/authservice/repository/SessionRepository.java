@@ -16,7 +16,8 @@ public interface SessionRepository extends JpaRepository<Session,Long> {
     Session  save(Session session);
 
 
-     List<Session> saveAll(List<Session> sessions);
+    @Override
+    <S extends Session> List<S> saveAll(Iterable<S> entities);
 
     List<Session> findByUserAndStatus(User user, SessionStatus status);
     Optional<Session> findByRefreshToken(String token);

@@ -1,6 +1,7 @@
 package dev.dharam.authservice.service;
 
 import dev.dharam.authservice.config.appconfig.ApplicationConstants;
+import dev.dharam.authservice.dtos.InternalLoginResultDto;
 import dev.dharam.authservice.dtos.LoginResponseDto;
 import dev.dharam.authservice.dtos.UserResponseDto;
 import dev.dharam.authservice.exception.ResourceAlreadyExistException;
@@ -64,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public LoginResponseDto login(String email, String password) {
+    public InternalLoginResultDto login(String email, String password) {
         Authentication resultAuthentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         email, password));
@@ -80,7 +81,7 @@ public class AuthServiceImpl implements AuthService {
         saveSession(loggedInUser,refreshToken);
 
         UserResponseDto userResponseDto = UserResponseDto.from(loggedInUser); // Mapper use karein
-        return new LoginResponseDto(accessToken, refreshToken, userResponseDto);
+        return new InternalLoginResultDto(accessToken, refreshToken, userResponseDto);
     }
 
     @Override

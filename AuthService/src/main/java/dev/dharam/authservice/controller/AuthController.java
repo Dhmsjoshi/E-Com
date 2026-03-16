@@ -1,16 +1,16 @@
 package dev.dharam.authservice.controller;
 
-import dev.dharam.authservice.dtos.LoginResponseDto;
-import dev.dharam.authservice.dtos.LoginUserRequestDto;
-import dev.dharam.authservice.dtos.SignupUserRequestDto;
-import dev.dharam.authservice.dtos.UserResponseDto;
+import dev.dharam.authservice.dtos.*;
 import dev.dharam.authservice.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.Map;
 
 @RestController
@@ -27,36 +27,41 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginUserRequestDto requestDto,
-                                                  HttpServletResponse response){
-        LoginResponseDto  loginResponseDto = authService.login(requestDto.email(), requestDto.password());
+    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginUserRequestDto requestDto){
+        InternalLoginResultDto loginResultDto = authService.login(requestDto.email(), requestDto.password());
+        LoginResponseDto responseDto = new LoginResponseDto(loginResultDto.jwtToken(),loginResultDto.userResponseDto());
 
-        Cookie cookie = new Cookie("refreshToken", loginResponseDto.refreshToken());
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);
-        cookie.setPath("/");
-        cookie.setMaxAge(30*24*60*60); //30 days
+        ResponseCookie resCookie = ResponseCookie.from("refreshToken", loginResultDto.refreshToken())
+                        .httpOnly(true)
+                        .secure(false)
+                        .path("/")
+                        .maxAge(Duration.ofDays(30))
+                        .sameSite("Strict")
+                        .build();
 
-        response.addCookie(cookie);
 
-        return ResponseEntity.ok(loginResponseDto);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, resCookie.toString())
+                .body(responseDto);
     }
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@CookieValue(name = "refreshToken",required = false)
-                                             String refreshToken,
-                                         HttpServletResponse response){
+                                             String refreshToken){
         if(refreshToken != null){
             authService.logout(refreshToken);
         }
-        Cookie cookie = new Cookie("refreshToken", null);
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
+        ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
 
-        response.addCookie(cookie);
-
-        return ResponseEntity.ok("Logged out successfully");
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
+                .body("Logged out successfully");
     }
 
     @PostMapping("/refresh-token")

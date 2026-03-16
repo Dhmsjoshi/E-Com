@@ -36,7 +36,7 @@ public class AuthSecurityConfig {
             .authorizeHttpRequests(
                 (requests) ->
                         requests
-                            .requestMatchers("api/auth/signup", "/api/auth/login").permitAll()
+                            .requestMatchers("api/auth/signup", "/api/auth/login","/api/auth/refresh-token").permitAll()
                             .anyRequest().authenticated()
                 )
                         .addFilterBefore(new JwtTokenValidationFilter(jwtUtil),
