@@ -33,7 +33,7 @@ public class JwtTokenValidationFilter extends OncePerRequestFilter {
             try {
                 String jwt = authHeader.substring(7);
 
-                // 2. Extract Claims using Util
+
                 Claims claims = jwtUtil.extractAllClaims(jwt);
 
                 String username = jwtUtil.getUsernameFromToken(claims);
@@ -51,7 +51,7 @@ public class JwtTokenValidationFilter extends OncePerRequestFilter {
             } catch (ExpiredJwtException e) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("Token Expired");
-                return; // Response yahi khatam karo
+                return;
             } catch (Exception e) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.getWriter().write("Invalid Token");

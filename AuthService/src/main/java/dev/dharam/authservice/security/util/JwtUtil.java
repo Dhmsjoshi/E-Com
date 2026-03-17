@@ -53,7 +53,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    // Token se saara data (Claims) nikalne ke liye
+
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
