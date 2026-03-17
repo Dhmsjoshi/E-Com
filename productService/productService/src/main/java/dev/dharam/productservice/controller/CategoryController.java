@@ -19,6 +19,7 @@ import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,6 +67,7 @@ public class CategoryController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a new category", description = "Validates the input and saves a new category record ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Category successfully created"),
@@ -80,6 +82,7 @@ public class CategoryController {
     }
 
     @PatchMapping("/{categoryId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Partially update a category", description = "Updates only the fields provided in the request body for an existing category.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Category updated successfully"),
@@ -99,6 +102,7 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{categoryId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a category", description = "Permanently removes a category from the database catalog based on its ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Category deleted successfully"),

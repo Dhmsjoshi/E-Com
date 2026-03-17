@@ -45,5 +45,8 @@ public interface ProductRepository extends JpaRepository<Product,Long>, JpaSpeci
 
     Page<Product> findAll(Specification spec, Pageable pageable);
 
+    Optional<Product> findFirstByCategoryIdAndPriceLessThanEqualAndIsDeletedFalseOrderByCreatedAtDesc(Long categoryId, Double maxPrice);
+
+    Optional<Product> findFirstByCategoryIdAndIsDeletedFalseOrderByCreatedAtDesc(Long categoryId);
 
 }

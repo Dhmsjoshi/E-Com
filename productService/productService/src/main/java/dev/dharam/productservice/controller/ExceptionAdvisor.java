@@ -48,15 +48,15 @@ public class ExceptionAdvisor {
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 
-    //  Fallback
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponseDto> handleGlobalException(Exception ex) {
-        ErrorResponseDto error = new ErrorResponseDto(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Something went wrong on our side!"
-        );
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+     // Fallback
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<ErrorResponseDto> handleGlobalException(Exception ex) {
+//        ErrorResponseDto error = new ErrorResponseDto(
+//                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+//                "Something went wrong on our side!"
+//        );
+//        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+//    }
 
     @ExceptionHandler
     public ResponseEntity<ErrorResponseDto> handleConstraintViolation(ConstraintViolationException ex) {

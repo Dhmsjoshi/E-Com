@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -75,6 +76,7 @@ public class ProductController {
     };
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a new product", description = "Validates the input and saves a new product record linked to a valid Category ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Product successfully created"),
@@ -88,6 +90,7 @@ public class ProductController {
     }
 
     @PatchMapping("/{productId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Partially update a product", description = "Updates only the fields provided in the request body for an existing product.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product updated successfully"),
@@ -112,6 +115,7 @@ public class ProductController {
 //    }
 
     @DeleteMapping("/{productId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete a product", description = "Permanently removes a product from the database catalog based on its ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product deleted successfully"),

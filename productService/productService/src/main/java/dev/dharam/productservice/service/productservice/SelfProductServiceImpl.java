@@ -47,16 +47,20 @@ public class SelfProductServiceImpl implements ProductService{
     }
 
     public List<ProductResponseDto> getHomePageProducts(){
-        List<Category> allCategories = categoryService.getAllCategories()
-                .stream().map(dtoMapper::toCategoryEntity).toList();
+        int dayOfWeek = java.time.LocalDate.now().getDayOfWeek().getValue();
+        boolean isSaleDay = (dayOfWeek == 2); // Tuesday Test
+        Double budgetLimit = 2000.0;
 
+            // Direct stream processing bina extra intermediate variables ke
+            return categoryService.getAllCategories().stream()
+                    .map(dtoMapper::toCategoryEntity)
+                    .map(category -> isSaleDay
+                            ? productRepository.findFirstByCategoryIdAndPriceLessThanEqualAndIsDeletedFalseOrderByCreatedAtDesc(category.getId(), budgetLimit)
+                            : productRepository.findFirstByCategoryAndIsDeletedFalseOrderByCreatedAtDesc(category))
+                    .filter(Optional::isPresent)
+                    .map(opt -> ProductResponseDto.from(opt.get()))
+                    .toList();
 
-        // 2. Har category ke liye stream chala kar 1 product uthayein
-        return allCategories.stream()
-                .map(productRepository::findFirstByCategoryAndIsDeletedFalseOrderByCreatedAtDesc)
-                .filter(Optional::isPresent) // Sirf wahi lein jinme products hain
-                .map(optProduct -> ProductResponseDto.from(optProduct.get()))
-                .toList();
     }
 
     @Override
