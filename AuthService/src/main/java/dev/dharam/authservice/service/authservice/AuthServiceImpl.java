@@ -3,7 +3,7 @@ package dev.dharam.authservice.service.authservice;
 import dev.dharam.authservice.config.appconfig.ApplicationConstants;
 import dev.dharam.authservice.dtos.InternalLoginResultDto;
 import dev.dharam.authservice.dtos.UserResponseDto;
-import dev.dharam.authservice.exception.ResourceAlreadyExistException;
+import dev.dharam.authservice.exception.ResourceAlreadyExistsException;
 import dev.dharam.authservice.exception.ResourceNotFoundException;
 import dev.dharam.authservice.models.Role;
 import dev.dharam.authservice.models.Session;
@@ -45,7 +45,7 @@ public class AuthServiceImpl implements AuthService {
     public UserResponseDto signup(String email, String password) {
         userRepository.findByEmail(email).ifPresent(
                 user -> {
-                    throw new ResourceAlreadyExistException("User with email: "+email +" already exists!");
+                    throw new ResourceAlreadyExistsException("User with email: "+email +" already exists!");
                 }
         );
         Role customRole = roleRepository.findByName(ApplicationConstants.ROLE_CUSTOMER).orElseThrow(
