@@ -20,4 +20,6 @@ public class Role extends BaseModel{
 
     @Column(length = 255)
     private String description;
+
+
 }

@@ -33,15 +33,15 @@ public class JwtTokenValidationFilter extends OncePerRequestFilter {
             try {
                 String jwt = authHeader.substring(7);
 
-
                 Claims claims = jwtUtil.extractAllClaims(jwt);
 
-                String username = jwtUtil.getUsernameFromToken(claims);
+                String userIdFromToken = jwtUtil.getUserIdFromToken(claims);
+                String emailFromToken = jwtUtil.getEmailFromToken(claims);
                 String roles = jwtUtil.getRolesFromToken(claims);
 
-                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                if (emailFromToken  != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     Authentication authentication = new UsernamePasswordAuthenticationToken(
-                            username,
+                            userIdFromToken,
                             null,
                             AuthorityUtils.commaSeparatedStringToAuthorityList(roles));
 

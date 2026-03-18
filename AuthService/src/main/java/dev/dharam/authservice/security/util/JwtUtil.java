@@ -62,12 +62,21 @@ public class JwtUtil {
                 .getPayload();
     }
 
+    public String getUserIdFromToken(Claims claims) {
+        return claims.getSubject(); // Returns UUID String
+    }
+
+    public String getEmailFromToken(Claims claims) {
+        return claims.get("email", String.class);
+    }
+
     public String getUsernameFromToken(Claims claims) {
-        return String.valueOf(claims.get("username"));
+        return claims.get("username", String.class);
     }
 
     public String getRolesFromToken(Claims claims) {
-        return String.valueOf(claims.get("roles"));
+        Object roles = claims.get("roles");
+        return roles != null ? roles.toString() : "";
     }
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secretKeyStr.getBytes(StandardCharsets.UTF_8));

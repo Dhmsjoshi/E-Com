@@ -1,11 +1,10 @@
-package dev.dharam.authservice.service;
+package dev.dharam.authservice.service.authservice;
 
 import dev.dharam.authservice.config.appconfig.ApplicationConstants;
 import dev.dharam.authservice.dtos.InternalLoginResultDto;
-import dev.dharam.authservice.dtos.LoginResponseDto;
 import dev.dharam.authservice.dtos.UserResponseDto;
 import dev.dharam.authservice.exception.ResourceAlreadyExistException;
-import dev.dharam.authservice.exception.ResourceNotFoundExistException;
+import dev.dharam.authservice.exception.ResourceNotFoundException;
 import dev.dharam.authservice.models.Role;
 import dev.dharam.authservice.models.Session;
 import dev.dharam.authservice.models.SessionStatus;
@@ -50,7 +49,7 @@ public class AuthServiceImpl implements AuthService {
                 }
         );
         Role customRole = roleRepository.findByName(ApplicationConstants.ROLE_CUSTOMER).orElseThrow(
-                ()-> new ResourceNotFoundExistException("Default role not found!")
+                ()-> new ResourceNotFoundException("Default role not found!")
         );
 
         User user = new User();
@@ -87,7 +86,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(String refreshToken) {
         Session session = sessionRepository.findByRefreshToken(refreshToken).orElseThrow(
-                ()->new ResourceNotFoundExistException("Session not found!")
+                ()->new ResourceNotFoundException("Session not found!")
         );
         session.setStatus(SessionStatus.EXPIRED);
         sessionRepository.save(session);
@@ -96,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public String refreshAccessToken(String refreshToken) {
         Session session = sessionRepository.findByRefreshToken(refreshToken).orElseThrow(
-                ()->new ResourceNotFoundExistException("Invalid refresh token!")
+                ()->new ResourceNotFoundException("Invalid refresh token!")
         );
 
         if(!session.getStatus().equals(SessionStatus.ACTIVE)){

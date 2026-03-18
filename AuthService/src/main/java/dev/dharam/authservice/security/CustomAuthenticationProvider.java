@@ -1,7 +1,7 @@
 package dev.dharam.authservice.security;
 
 import dev.dharam.authservice.exception.InvalidCredentialsException;
-import dev.dharam.authservice.exception.ResourceNotFoundExistException;
+import dev.dharam.authservice.exception.ResourceNotFoundException;
 import dev.dharam.authservice.models.User;
 import dev.dharam.authservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         String password = authentication.getCredentials().toString();
 
         User user = userRepository.findByEmail(username).orElseThrow(
-                ()->new ResourceNotFoundExistException("User not found with email: "+username)
+                ()->new ResourceNotFoundException("User not found with email: "+username)
         );
 
         List<SimpleGrantedAuthority> authorities = user.getRoles()

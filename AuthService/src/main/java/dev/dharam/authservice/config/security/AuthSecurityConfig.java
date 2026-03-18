@@ -8,8 +8,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -22,28 +24,30 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class AuthSecurityConfig {
 
     private final AuthenticationProvider authenticationProvider;
     private final JwtUtil jwtUtil;
+    private final SecurityPathRegistry pathRegistry;
 
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-       return http
-               .cors(withDefaults())
-               .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(
-                (requests) ->
-                        requests
-                            .requestMatchers("api/auth/signup", "/api/auth/login","/api/auth/refresh-token").permitAll()
-                            .anyRequest().authenticated()
+        return http
+                .cors(withDefaults())
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(requests -> requests
+                        // Swagger paths
+                        .requestMatchers(pathRegistry.SWAGGER_URLS).permitAll()
+                        // Public POST requests (Login/Signup)
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, pathRegistry.PUBLIC_POST_URLS).permitAll()
+                        // Rest all secured
+                        .anyRequest().authenticated()
                 )
-                        .addFilterBefore(new JwtTokenValidationFilter(jwtUtil),
-                                BasicAuthenticationFilter.class)
-                        .formLogin(withDefaults())
-                        .httpBasic(withDefaults())
-                        .build();
+                .addFilterBefore(new JwtTokenValidationFilter(jwtUtil), BasicAuthenticationFilter.class)
+                .build();
     }
 
 

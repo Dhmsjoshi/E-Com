@@ -1,5 +1,6 @@
 package dev.dharam.authservice.models;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -7,6 +8,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.Set;
 @Getter
@@ -16,6 +18,8 @@ import java.util.Set;
         @Index(name = "idx_user_email", columnList = "email"),
         @Index(name = "idx_user_username", columnList = "username")
 })
+@Validated
+@Tag(name = "User Management", description = "Endpoints for user profile and role assignment")
 public class User extends BaseModel {
     @NotBlank(message = "Email is mandatory")
     @Email(regexp = "[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,3}", message = "Please provide a valid email address")

@@ -1,7 +1,6 @@
-package dev.dharam.authservice.service;
+package dev.dharam.authservice.service.authservice;
 
 import dev.dharam.authservice.dtos.InternalLoginResultDto;
-import dev.dharam.authservice.dtos.LoginResponseDto;
 import dev.dharam.authservice.dtos.UserResponseDto;
 
 public interface AuthService {
