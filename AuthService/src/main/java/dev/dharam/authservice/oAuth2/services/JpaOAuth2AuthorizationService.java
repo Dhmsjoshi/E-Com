@@ -6,11 +6,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.dharam.authservice.oAuth2.models.Authorization;
 import dev.dharam.authservice.oAuth2.repositories.AuthorizationRepository;
 import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.jackson2.SecurityJackson2Modules;
 import org.springframework.security.oauth2.core.*;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationCode;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -18,10 +24,14 @@ import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2AuthorizationServerJackson2Module;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +43,19 @@ public class JpaOAuth2AuthorizationService implements OAuth2AuthorizationService
     private final AuthorizationRepository authorizationRepository;
     private final RegisteredClientRepository registeredClientRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer;
+    private final JwtEncoder jwtEncoder;
 
-    public JpaOAuth2AuthorizationService(AuthorizationRepository authorizationRepository, RegisteredClientRepository registeredClientRepository) {
+    public JpaOAuth2AuthorizationService(AuthorizationRepository authorizationRepository,
+                                         RegisteredClientRepository registeredClientRepository,
+                                         OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer,
+                                         JwtEncoder jwtEncoder) {
         Assert.notNull(authorizationRepository, "authorizationRepository cannot be null");
         Assert.notNull(registeredClientRepository, "registeredClientRepository cannot be null");
         this.authorizationRepository = authorizationRepository;
         this.registeredClientRepository = registeredClientRepository;
+        this.jwtEncoder = jwtEncoder;
+        this.tokenCustomizer = tokenCustomizer;
 
         ClassLoader classLoader = JpaOAuth2AuthorizationService.class.getClassLoader();
         List<Module> securityModules = SecurityJackson2Modules.getModules(classLoader);
@@ -285,5 +302,86 @@ public class JpaOAuth2AuthorizationService implements OAuth2AuthorizationService
             return AuthorizationGrantType.DEVICE_CODE;
         }
         return new AuthorizationGrantType(authorizationGrantType);              // Custom authorization grant type
+    }
+
+    @Transactional
+    public Map<String, String> refreshAccessToken(String refreshTokenValue) {
+        // 1. Database se refresh token ke base par poora record uthao
+        OAuth2Authorization authorization = this.findByToken(refreshTokenValue, OAuth2TokenType.REFRESH_TOKEN);
+
+        if (authorization == null) {
+            throw new RuntimeException("Invalid Refresh Token!");
+        }
+
+        // 2. Client ki details fetch karo (Isiliye RegisteredClientRepository chahiye)
+        RegisteredClient registeredClient = this.registeredClientRepository.findById(authorization.getRegisteredClientId());
+        if (registeredClient == null) {
+            throw new RuntimeException("Registered Client not found!");
+        }
+
+        // 3. Expiry Check
+        if (authorization.getRefreshToken().getToken().getExpiresAt().isBefore(Instant.now())) {
+            throw new RuntimeException("Refresh Token has expired!");
+        }
+
+        // 4. Token Generation Setup
+        Instant now = Instant.now();
+        Instant expiresAt = now.plus(Duration.ofHours(2));
+        JwsHeader.Builder jwsHeaderBuilder = JwsHeader.with(SignatureAlgorithm.RS256);
+
+        JwtClaimsSet.Builder claimsBuilder = JwtClaimsSet.builder()
+                .issuer("http://auth-service:8080")
+                .subject(authorization.getPrincipalName())
+                .audience(List.of("product-service"))
+                .issuedAt(now)
+                .expiresAt(expiresAt);
+
+        // 5. THE MAGIC: Token Customizer Trigger
+        // Hum manually context banate hain taaki hamara bean trigger ho sake
+        JwtEncodingContext context = JwtEncodingContext.with(jwsHeaderBuilder, claimsBuilder)
+                .registeredClient(registeredClient)
+                .principal(new UsernamePasswordAuthenticationToken(authorization.getPrincipalName(), null))
+                .authorization(authorization)
+                .tokenType(OAuth2TokenType.ACCESS_TOKEN)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .build();
+
+        this.tokenCustomizer.customize(context);
+
+        // 6. Final Encoding (JWT String banana)
+        String newAccessTokenValue = this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeaderBuilder.build(), claimsBuilder.build())).getTokenValue();
+
+        // 7. Authorization Object Update aur DB mein Save
+        OAuth2AccessToken newAccessToken = new OAuth2AccessToken(
+                OAuth2AccessToken.TokenType.BEARER,
+                newAccessTokenValue,
+                now,
+                expiresAt,
+                authorization.getAuthorizedScopes()
+        );
+
+        // Purane authorization object mein naya token "merge" karo
+        OAuth2Authorization updatedAuthorization = OAuth2Authorization.from(authorization)
+                .token(newAccessToken)
+                .build();
+
+        this.save(updatedAuthorization); // Yeh aapki toEntity() call karega aur DB update hoga
+
+        return Map.of("access_token", newAccessTokenValue);
+    }
+
+    @Transactional
+    public void removeByToken(String tokenValue) {
+        Assert.hasText(tokenValue, "tokenValue cannot be empty");
+
+        // 1. Pehle token ke base par Authorization record dhoondo
+        // Hum tokenType null bhej rahe hain taaki ye Access ya Refresh kisi bhi token se dhoond sake
+        OAuth2Authorization authorization = this.findByToken(tokenValue, null);
+
+        // 2. Agar record milta hai, toh use delete kar do
+        if (authorization != null) {
+            this.remove(authorization);
+            // Note: 'this.remove' internally 'authorizationRepository.deleteById' ko call karega
+        }
     }
 }

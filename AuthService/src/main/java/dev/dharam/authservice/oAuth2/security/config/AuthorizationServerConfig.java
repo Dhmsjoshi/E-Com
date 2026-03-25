@@ -7,6 +7,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import dev.dharam.authservice.oAuth2.models.SecurityUser;
 import dev.dharam.authservice.oAuth2.models.UserMixin;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -16,23 +17,37 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class AuthorizationServerConfig {
+
+    private final CustomLoginSuccessHandler successHandler;
     @Bean
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
@@ -68,45 +83,27 @@ public class AuthorizationServerConfig {
             throws Exception {
         http
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/error").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/v1/clients/register").permitAll()
+                        .requestMatchers("/login", "/api/v1/clients/register", "/error").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .anyRequest().authenticated()
-               )
-                .csrf(csrf -> csrf.disable())
-                .formLogin(Customizer.withDefaults());
+                )
+                // CSRF: Agar frontend (React/Angular) se call kar rahe ho toh ye zaroori hai
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers("/api/v1/clients/register", "/login")
+                )
+                .formLogin(form -> form
+                        .loginPage("/login") // Aapka custom login page url
+                        .successHandler(successHandler) // YAHAN AAPKA COOKIE+JSON LOGIC CONNECT HUA
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .deleteCookies("refresh_token") // Logout par cookie saaf karo
+                        .logoutSuccessUrl("/login?logout")
+                );
 
         return http.build();
     }
-
-//    @Bean
-//    public UserDetailsService userDetailsService() {
-//        UserDetails userDetails = User.withDefaultPasswordEncoder()
-//                .username("user")
-//                .password("password")
-//                .roles("USER")
-//                .build();
-//
-//        return new InMemoryUserDetailsManager(userDetails);
-//    }
-
-//    @Bean
-//    public RegisteredClientRepository registeredClientRepository() {
-//        RegisteredClient oidcClient = RegisteredClient.withId(UUID.randomUUID().toString())
-//                .clientId("oidc-client")
-//                .clientSecret("{noop}secret")
-//                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-//                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-//                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-//                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/oidc-client")
-//                .postLogoutRedirectUri("http://127.0.0.1:8080/")
-//                .scope(OidcScopes.OPENID)
-//                .scope(OidcScopes.PROFILE)
-//                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
-//                .build();
-//
-//        return new InMemoryRegisteredClientRepository(oidcClient);
-//    }
 
     @Bean
     public JWKSource<SecurityContext> jwkSource() {
@@ -157,5 +154,44 @@ public class AuthorizationServerConfig {
         // Spring Security ko batata hai ki SecurityUser ko serialize/deserialize kiya ja sakta hai
         module.setMixInAnnotation(SecurityUser.class, UserMixin.class);
         return module;
+    }
+
+    @Bean
+    public OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
+        return (context) -> {
+            // Access Token ke liye
+            if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
+                Authentication principal = context.getPrincipal();
+                context.getClaims().claims((claims) -> {
+                    Set<String> roles = principal.getAuthorities().stream()
+                            .map(GrantedAuthority::getAuthority)
+                            .collect(Collectors.toSet());
+                    claims.put("roles", roles);
+
+                    if (principal.getPrincipal() instanceof SecurityUser user) {
+                        claims.put("user_id", user.getId());
+                    }
+
+                    String clientId = context.getRegisteredClient().getClientId();
+                    claims.put("aud", List.of(clientId, "product-service", "order-service"));
+                });
+            }
+
+            // ID Token ke liye (Jab OIDC flow ya Refresh flow chale)
+            if ("id_token".equals(context.getTokenType().getValue())) {
+                context.getClaims().claim("auth_method", "form_login");
+                // Yahan aap extra identity claims daal sakte ho
+            }
+        };
+    }
+
+//    @Bean
+//    public RegisteredClientRepository registeredClientRepository(dev.dharam.authservice.oAuth2.repositories.ClientRepository clientRepository) {
+//       return new JpaRegisteredClientRepository(clientRepository);
+//    }
+
+    @Bean
+    public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
+        return new NimbusJwtEncoder(jwkSource);
     }
 }
