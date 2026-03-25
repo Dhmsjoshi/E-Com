@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-@Service
+//@Service
 public class FakeStoreProductServiceImpl implements ProductService{
 
     private final FakeStoreClient fakeStoreClient;

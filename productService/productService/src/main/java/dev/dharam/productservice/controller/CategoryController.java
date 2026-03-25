@@ -78,7 +78,7 @@ public class CategoryController {
     })
     public ResponseEntity<CategoryResponseDto> createCategory(@RequestBody @Valid CreateCategoryRequestDto requestDto)
              {
-        return  new ResponseEntity<>(categoryService.createCategory(requestDto), HttpStatus.OK);
+        return  new ResponseEntity<>(categoryService.createCategory(requestDto), HttpStatus.CREATED);
     }
 
     @PatchMapping("/{categoryId}")
