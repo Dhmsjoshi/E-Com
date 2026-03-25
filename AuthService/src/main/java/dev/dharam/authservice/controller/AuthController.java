@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("api/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Validated // Path variables ya Cookie validation ke liye
 @Tag(name = "Authentication Management", description = "Endpoints for User Signup, Login, Logout and Token Refresh")
@@ -114,4 +114,6 @@ public class AuthController {
         }
         return ResponseEntity.noContent().build();
     }
+
+
 }

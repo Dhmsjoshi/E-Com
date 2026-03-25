@@ -5,11 +5,12 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import dev.dharam.authservice.config.security.SecurityPathRegistry;
 import dev.dharam.authservice.oAuth2.models.SecurityUser;
 import dev.dharam.authservice.oAuth2.models.UserMixin;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,7 +31,6 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 import java.security.KeyPair;
@@ -44,10 +44,18 @@ import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
+
 public class AuthorizationServerConfig {
 
     private final CustomLoginSuccessHandler successHandler;
+    private final SecurityPathRegistry pathRegistry;
+
+    public AuthorizationServerConfig(@Lazy CustomLoginSuccessHandler successHandler,
+                                     SecurityPathRegistry pathRegistry) {
+        this.successHandler = successHandler;
+        this.pathRegistry = pathRegistry;
+    }
+
     @Bean
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
@@ -81,24 +89,35 @@ public class AuthorizationServerConfig {
     @Order(2)
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
             throws Exception {
+        System.out.println("Loading Updated App Security Config...");
         http
+                // 1. CORS enable kiya (frontend connection ke liye)
+                .cors(Customizer.withDefaults())
+
+                // 2. CSRF handling: APIs ke liye disable, login form ke liye enabled
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers(pathRegistry.PUBLIC_POST_URLS)
+                        .ignoringRequestMatchers("/api/v1/clients/register")
+                )
+
+                // 3. Authorization logic using your Registry
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/login", "/api/v1/clients/register", "/error").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                        .requestMatchers(pathRegistry.SWAGGER_URLS).permitAll()
+                        .requestMatchers(pathRegistry.PUBLIC_POST_URLS).permitAll()
+                        .requestMatchers("/login", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
-                // CSRF: Agar frontend (React/Angular) se call kar rahe ho toh ye zaroori hai
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .ignoringRequestMatchers("/api/v1/clients/register", "/login")
-                )
+
+                // 4. Custom Login Page connection
                 .formLogin(form -> form
-                        .loginPage("/login") // Aapka custom login page url
-                        .successHandler(successHandler) // YAHAN AAPKA COOKIE+JSON LOGIC CONNECT HUA
+                        .loginPage("/login")
+                        .successHandler(successHandler)
                         .permitAll()
                 )
+
+                // 5. Logout settings
                 .logout(logout -> logout
-                        .deleteCookies("refresh_token") // Logout par cookie saaf karo
+                        .deleteCookies("refresh_token", "JSESSIONID")
                         .logoutSuccessUrl("/login?logout")
                 );
 
