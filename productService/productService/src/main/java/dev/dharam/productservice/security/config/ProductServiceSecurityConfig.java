@@ -13,9 +13,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-@Configuration
-@EnableWebSecurity
-@EnableMethodSecurity
+//@Configuration
+//@EnableWebSecurity
+//@EnableMethodSecurity
 @RequiredArgsConstructor
 public class ProductServiceSecurityConfig {
 
@@ -28,11 +28,7 @@ public class ProductServiceSecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, securityPathRegistry.PUBLIC_GET_URLS).permitAll()
-//                        .requestMatchers(HttpMethod.POST, "/products/**", "/category/**").hasRole("ADMIN")
-//                        .requestMatchers(HttpMethod.PATCH, "/products/**", "/category/**").hasRole("ADMIN")
-//                        .requestMatchers(HttpMethod.DELETE, "/products/**", "/category/**").hasRole("ADMIN")
-//                        .requestMatchers(HttpMethod.PUT, "/products/**", "/category/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, securityPathRegistry.PUBLIC_GET_URLS).permitAll()//
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtTokenValidationFilter(jwtUtil,securityPathRegistry), UsernamePasswordAuthenticationFilter.class);

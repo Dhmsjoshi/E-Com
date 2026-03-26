@@ -1,11 +1,11 @@
 package dev.dharam.authservice.security;
 
-import dev.dharam.authservice.exception.InvalidCredentialsException;
-import dev.dharam.authservice.exception.ResourceNotFoundException;
 import dev.dharam.authservice.models.User;
+import dev.dharam.authservice.oAuth2.models.SecurityUser;
 import dev.dharam.authservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -29,19 +29,22 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         String password = authentication.getCredentials().toString();
 
         User user = userRepository.findByEmail(username).orElseThrow(
-                ()->new ResourceNotFoundException("User not found with email: "+username)
+                () -> new BadCredentialsException("User not found with email: " + username)
         );
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new BadCredentialsException("Invalid password!");
+        }
 
         List<SimpleGrantedAuthority> authorities = user.getRoles()
                 .stream()
                 .map(role -> new SimpleGrantedAuthority(
                         role.getName())).collect(Collectors.toList()
                 );
-        if(!passwordEncoder.matches(password,user.getPassword())){
-            throw new InvalidCredentialsException("Invalid password!");
-        }
 
-        return new UsernamePasswordAuthenticationToken(user, null, authorities);
+        SecurityUser principal = new SecurityUser(user, authorities);
+
+        return new UsernamePasswordAuthenticationToken(principal, null, authorities);
     }
 
     @Override

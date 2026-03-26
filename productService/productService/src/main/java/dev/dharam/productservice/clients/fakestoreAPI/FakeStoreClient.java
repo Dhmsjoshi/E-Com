@@ -18,7 +18,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
+//@Component
 public class FakeStoreClient {
     private String FAKE_STORE_PRODUCT_URL = "https://fakestoreapi.com/products";
     private RestTemplateBuilder restTemplateBuilder;
