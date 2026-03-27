@@ -25,4 +25,11 @@ public class Cart extends BaseAuditModel {
     private List<CartItem> cartItems = new ArrayList<>();
 
     private Double totalAmount;
+
+    public void updateTotalAmount() {
+        this.totalAmount = (cartItems == null || cartItems.isEmpty())?0.0:
+                cartItems.stream()
+                        .mapToDouble(CartItem::getItemTotal)
+                        .sum();
+    }
 }

@@ -16,12 +16,10 @@ import java.time.Instant;
 public abstract class BaseAuditModel {
 
     @CreatedDate
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @UpdateTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "updated_at")
     private Instant updatedAt;
 

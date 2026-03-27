@@ -1,6 +1,9 @@
 package dev.dharam.cartservice.model;
 
+import jakarta.annotation.Nonnull;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 
 @Entity
@@ -17,9 +20,15 @@ public class CartItem extends BaseAuditModel{
     private Long id;
 
     @Column(name = "product_id", nullable = false)
+    @Nonnull
     private Long productid;
 
+    @Column(name = "product_name")
+    private String productName;
+
+    @PositiveOrZero
     private Double price;
+    @Min(1)
     private Integer quantity;
 
     public Double getItemTotal(){
