@@ -192,7 +192,7 @@ public class AuthorizationServerConfig {
                     }
 
                     String clientId = context.getRegisteredClient().getClientId();
-                    claims.put("aud", List.of(clientId, "productSservice", "orderService","cartService"));
+                    claims.put("aud", List.of(clientId, "productService", "orderService","cartService"));
                 });
             }
 
