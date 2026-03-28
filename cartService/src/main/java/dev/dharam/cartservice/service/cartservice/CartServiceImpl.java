@@ -24,7 +24,7 @@ public class CartServiceImpl implements CartService{
 
 
     @Override
-    public CartResponseDto addToCart(AddToCartRequestDto requestDto) {
+    public CartResponseDto addToCart(UUID userId, AddToCartRequestDto requestDto) {
         // 1. External Call: Product details fetch karo (Price & Name ke liye)
         // Agar product invalid hai, toh ye client exception throw karega (404/503)
         var productDetails = productService.getProductDetails(requestDto.productId());
@@ -34,10 +34,10 @@ public class CartServiceImpl implements CartService{
         }
 
         // 2. Cart Fetch/Create: User ka cart find karo ya naya banao
-        Cart cart = cartRepository.findById(requestDto.userId())
+        Cart cart = cartRepository.findById(userId)
                 .orElseGet(() -> {
                     Cart newCart = new Cart();
-                    newCart.setUserId(requestDto.userId());
+                    newCart.setUserId(userId);
                     newCart.setTotalAmount(0.0);
                     return newCart;
                 });

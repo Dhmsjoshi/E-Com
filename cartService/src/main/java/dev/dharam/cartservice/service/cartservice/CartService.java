@@ -7,7 +7,7 @@ import dev.dharam.cartservice.model.Cart;
 import java.util.UUID;
 
 public interface CartService {
-    CartResponseDto addToCart(AddToCartRequestDto requestDto);
+    CartResponseDto addToCart(UUID userId, AddToCartRequestDto requestDto);
     CartResponseDto getCart(UUID userId);
     CartResponseDto removeItemFromCart(UUID userId, Long productId);
 }
