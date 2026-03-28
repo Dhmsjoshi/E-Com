@@ -46,7 +46,7 @@ public class SecurityConfig {
         // 2. Agar aapke DB/Token mein roles "ROLE_CUSTOMER" format mein hain, toh yahan prefix khali rakho.
         // Agar sirf "CUSTOMER" aata hai, toh yahan "ROLE_" likho.
         // Aapke AuthService ke hisaab se hum prefix empty rakh rahe hain.
-        grantedAuthoritiesConverter.setAuthorityPrefix("");
+        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
 
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
