@@ -118,7 +118,7 @@ public class CustomLoginSuccessHandler implements AuthenticationSuccessHandler {
                 .issuedAt(now);
 
         if ("access_token".equals(type)) {
-            claimsBuilder.audience(List.of("product-service", "order-service"))
+            claimsBuilder.audience(List.of("productService", "orderService","cartService"))
                     .expiresAt(now.plus(Duration.ofHours(2)))
                     .claim("roles", authentication.getAuthorities().stream()
                             .map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
