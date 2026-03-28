@@ -52,12 +52,12 @@ public class CartServiceImpl implements CartService{
             CartItem item = existingItem.get();
             item.setQuantity(item.getQuantity() + requestDto.quantity());
             item.setPrice(productDetails.price());
-            item.setProductName(productDetails.productName()); // Security: Sync name too
+            item.setProductName(productDetails.title()); // Security: Sync name too
         } else {
             // Case B: Naya product hai, toh CartItem create karke list mein add karo
             CartItem newItem = CartItem.builder()
                     .productid(productDetails.id())
-                    .productName(productDetails.productName()) // Entity field updated
+                    .productName(productDetails.title()) // Entity field updated
                     .price(productDetails.price())
                     .quantity(requestDto.quantity())
                     .build();
