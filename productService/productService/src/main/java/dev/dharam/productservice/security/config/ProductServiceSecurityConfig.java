@@ -50,7 +50,7 @@ public class ProductServiceSecurityConfig {
         authoritiesConverter.setAuthoritiesClaimName("roles");
 
         // Prefix empty kyunki AuthService already "ROLE_" bhej raha hai (ya as per your DB)
-        authoritiesConverter.setAuthorityPrefix("");
+        authoritiesConverter.setAuthorityPrefix("ROLE_");
 
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
