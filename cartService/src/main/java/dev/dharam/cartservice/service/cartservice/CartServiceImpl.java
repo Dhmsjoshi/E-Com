@@ -9,18 +9,36 @@ import dev.dharam.cartservice.model.Cart;
 import dev.dharam.cartservice.model.CartItem;
 import dev.dharam.cartservice.repository.CartRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
+
+@Slf4j
 public class CartServiceImpl implements CartService{
+
+    public CartServiceImpl(CartRepository cartRepository,
+                           ProductServiceClient productService,
+                           DtoMapper dtoMapper,
+                           @Qualifier("myCustomRedisTemplate") RedisTemplate<String, Object> redisTemplate) {
+        this.cartRepository = cartRepository;
+        this.productService = productService;
+        this.dtoMapper = dtoMapper;
+        this.redisTemplate = redisTemplate;
+    }
 
     private final CartRepository cartRepository;
     private final ProductServiceClient productService;
     private final DtoMapper dtoMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private static final String CART_CACHE_PREFIX = "cart:";
 
 
     @Override
@@ -72,8 +90,11 @@ public class CartServiceImpl implements CartService{
         // 5. Save: Database mein save karo (MySQL)
         Cart savedCart = cartRepository.save(cart);
 
+        CartResponseDto response = DtoMapper.mapToCartResponseDto(savedCart);
+        saveToCache(userId, response);
+
         // 6. Response: Entity ko Record DTO mein badal kar return karo
-        return DtoMapper.mapToCartResponseDto(savedCart);
+        return response;
     }
 
     @Override
@@ -98,14 +119,65 @@ public class CartServiceImpl implements CartService{
         cart.updateTotalAmount();
         Cart updatedCart = cartRepository.save(cart);
 
-        return DtoMapper.mapToCartResponseDto(updatedCart);
+        CartResponseDto response = DtoMapper.mapToCartResponseDto(updatedCart);
+
+        //Cache update
+        String key = CART_CACHE_PREFIX+userId.toString();
+        try{
+            //new data overwrite
+            redisTemplate.opsForValue().set(key, response, Duration.ofHours(24));
+            log.info("Redis cache updated for user: {}"+userId);
+        }catch (Exception e){
+            log.error("Failed to update redis cache: {}", e.getMessage());
+            //delete old data from cache
+            redisTemplate.delete(key);
+        }
+
+        return response;
     }
 
     @Override
     public CartResponseDto getCart(UUID userId) {
+        String key = CART_CACHE_PREFIX + userId.toString();
+
+        // 1. Try fetching from Redis
+        try {
+            CartResponseDto cachedCart = (CartResponseDto) redisTemplate.opsForValue().get(key);
+            if (cachedCart != null) {
+                log.info("Redis Cache hit for User: {}", userId);
+                return cachedCart;
+            }
+        } catch (Exception e) {
+            log.error("Redis error: {}", e.getMessage());
+        }
+
+        log.info("Redis cache miss. Fetching from DB for user: {}", userId);
+
+        // 2. Fetch from DB
         Cart cart = cartRepository.findById(userId).orElseThrow(
-                ()-> new ResourceNotFoundException("Cart not found for User ID: " + userId)
+                () -> new ResourceNotFoundException("Cart not found for User ID: " + userId)
         );
-        return DtoMapper.mapToCartResponseDto(cart);
+
+        CartResponseDto response = DtoMapper.mapToCartResponseDto(cart);
+
+        // 3. FIX: Save to Redis taaki agli request "Hit" ho jaye!
+        try {
+            saveToCache(userId, response);
+        } catch (Exception e) {
+            log.error("Failed to populate cache after DB fetch: {}", e.getMessage());
+        }
+
+        return response;
     }
+
+    private void saveToCache(UUID userId, CartResponseDto dto){
+        String key = CART_CACHE_PREFIX + userId.toString();
+        //24 hrs expiry
+        redisTemplate.opsForValue().set(key,dto, Duration.ofHours(24));
+    }
+
+    //Hybrid strategy
+    //For Read -> Cache-Aside strategy
+    //For Write-> Write-Update or Write-Through strategy
+
 }
