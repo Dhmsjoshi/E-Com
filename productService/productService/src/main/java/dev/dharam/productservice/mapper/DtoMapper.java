@@ -21,6 +21,7 @@ public class DtoMapper {
         product.setImageUrl(productResponseDto.imageUrl());
         product.setDescription(productResponseDto.description());
         product.setPrice(productResponseDto.price());
+        product.setQuantity(productResponseDto.quantity());
         return product;
 
     }

@@ -49,4 +49,9 @@ public interface ProductRepository extends JpaRepository<Product,Long>, JpaSpeci
 
     Optional<Product> findFirstByCategoryIdAndIsDeletedFalseOrderByCreatedAtDesc(Long categoryId);
 
+//    @Modifying
+//    @Transactional
+//    @Query("UPDATE Product p SET p.quantity = p.quantity - :qty WHERE p.id = :id AND p.quantity >= :qty")
+//    int decreaseStock(Long id, Integer qty);
+
 }

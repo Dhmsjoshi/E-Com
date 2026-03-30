@@ -72,4 +72,9 @@ public class FakeStoreProductServiceImpl implements ProductService{
     public PagedResponse<ProductResponseDto> searchProducts(ProductSearchCriteria criteria) {
         return null;
     }
+
+    @Override
+    public void reduceStock(Long productId, Integer quantityToReduce) {
+
+    }
 }

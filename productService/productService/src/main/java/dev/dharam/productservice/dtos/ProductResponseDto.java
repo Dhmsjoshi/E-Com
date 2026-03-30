@@ -13,7 +13,8 @@ public record ProductResponseDto(
         Double price,
         String description,
         String category,
-        String imageUrl
+        String imageUrl,
+        Integer quantity
 ) {
     // Factory method for FakeStore API
     public static ProductResponseDto fromFakeStoreDto(FakeStoreProductDto fakeStoreProductDto) {
@@ -23,7 +24,9 @@ public record ProductResponseDto(
                 fakeStoreProductDto.price(),
                 fakeStoreProductDto.description(),
                 fakeStoreProductDto.category(),
-                fakeStoreProductDto.image()
+                fakeStoreProductDto.image(),
+                fakeStoreProductDto.quantity()
+
         );
     }
 
@@ -36,7 +39,8 @@ public record ProductResponseDto(
                 product.getDescription(),
                 // Assuming your Category entity is not null here
                 product.getCategory() != null ? product.getCategory().getName() : "Uncategorized",
-                product.getImageUrl()
+                product.getImageUrl(),
+                product.getQuantity()
         );
     }
 }

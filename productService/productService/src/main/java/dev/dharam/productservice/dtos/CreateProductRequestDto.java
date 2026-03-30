@@ -1,9 +1,6 @@
 package dev.dharam.productservice.dtos;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -27,5 +24,9 @@ public record CreateProductRequestDto (
     Long categoryId,
 
     @URL(message = "Please provide a valid image URL")
-    String imageUrl
+    String imageUrl,
+
+    @NotNull(message = "Quantity can not be empty!")
+    @Min(value = 0, message = "Quantity can not be less than 0")
+    Integer quantity
 ){};

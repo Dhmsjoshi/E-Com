@@ -25,4 +25,5 @@ public interface ProductService {
 
     PagedResponse<ProductResponseDto> searchProducts(ProductSearchCriteria criteria);
 
+    void reduceStock(Long productId, Integer quantityToReduce);
 }

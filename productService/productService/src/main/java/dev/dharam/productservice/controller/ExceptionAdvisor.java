@@ -4,6 +4,7 @@ import dev.dharam.productservice.exceptions.ErrorResponseDto;
 import dev.dharam.productservice.exceptions.ResourceAlreadyExistsException;
 import dev.dharam.productservice.exceptions.ResourceNotFoundException;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -99,5 +100,10 @@ public class ExceptionAdvisor {
                 message
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<String> handleConflict(OptimisticLockingFailureException ex) {
+        return new ResponseEntity<>("Stock has been updated, please try gain!", HttpStatus.CONFLICT);
     }
 }

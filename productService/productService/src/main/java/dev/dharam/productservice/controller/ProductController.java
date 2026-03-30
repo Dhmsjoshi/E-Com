@@ -161,4 +161,26 @@ public class ProductController {
     }
 
 
+    @Operation(summary = "Reduce Product Stock", description = "Inventory se product ki quantity kam karta hai. Agar stock kam ho ya optimistic lock fail ho, toh error return karta hai."
+    )
+    @ApiResponses(value = {
+            @ApiResponse( responseCode = "204",description = "Stock successfully kam ho gaya (No Content)"
+            ),
+            @ApiResponse(responseCode = "404",description = "Product ID nahi mili"
+            ),
+            @ApiResponse(responseCode = "409",description = "Conflict: Optimistic Lock fail ho gaya ya Stock insufficient hai"
+            ),
+            @ApiResponse(responseCode = "400",description = "Invalid input data"
+            )
+    })
+    @PatchMapping("/{id}/reduce-stock")
+    public ResponseEntity<Void> reduceStock(
+            @PathVariable Long id,
+            @RequestParam Integer quantity) {
+
+        productService.reduceStock(id, quantity);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+
 }

@@ -93,6 +93,9 @@ public class SelfProductServiceImpl implements ProductService{
         product.setCategory(productCategory);
         product.setImageUrl(requestDto.imageUrl());
 
+        // Quantity set karo (Default 0 agar null ho toh)
+        product.setQuantity(requestDto.quantity() != null ? requestDto.quantity() : 0);
+
         Product savedProduct = productRepository.save(product);
 
         return ProductResponseDto.from(savedProduct);
@@ -184,5 +187,20 @@ public class SelfProductServiceImpl implements ProductService{
         }
 
         return toPagedResponse(page);
+    }
+
+    @Transactional
+    public void reduceStock(Long productId, Integer quantityToReduce) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found!"));
+
+        if (product.getQuantity() < quantityToReduce) {
+            throw new RuntimeException("Out of Stock!");
+        }
+
+        product.setQuantity(product.getQuantity() - quantityToReduce);
+
+        // Yahan save() chalte hi @Version wala magic (Optimistic Locking) trigger hoga
+        productRepository.save(product);
     }
 }

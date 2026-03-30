@@ -10,5 +10,6 @@ public record FakeStoreProductDto (
     Double price,
     String description,
     String category,
-    String image)
+    String image,
+    Integer quantity)
 {};
