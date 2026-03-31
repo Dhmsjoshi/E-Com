@@ -38,6 +38,7 @@ public class OrderController {
             @ApiResponse(responseCode = "400", description = "Invalid request data or empty cart")
     })
     @PostMapping
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     public ResponseEntity<OrderResponseDto> placeOrder(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody OrderRequestDto requestDto) {
 
         UUID dummyUserId = extractUserId(jwt);
@@ -52,6 +53,7 @@ public class OrderController {
             @ApiResponse(responseCode = "404", description = "Order not found")
     })
     @GetMapping("/{orderId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     public ResponseEntity<OrderResponseDto> getOrderDetails(@PathVariable Long orderId) {
         return ResponseEntity.ok(orderService.getOrderDetails(orderId));
     }
@@ -59,6 +61,7 @@ public class OrderController {
     @Operation(summary = "Get current user's orders", description = "Retrieves a list of all historical orders for the logged-in user.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
     @GetMapping("/user")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<List<OrderResponseDto>> getUserOrders(@AuthenticationPrincipal Jwt jwt) {
 
         UUID dummyUserId = extractUserId(jwt);
@@ -73,6 +76,7 @@ public class OrderController {
             @ApiResponse(responseCode = "404", description = "Order not found")
     })
     @PutMapping("/{orderId}/cancel")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     public ResponseEntity<OrderResponseDto> cancelOrder(@AuthenticationPrincipal Jwt jwt,@PathVariable Long orderId) {
 
         UUID dummyUserId = extractUserId(jwt);

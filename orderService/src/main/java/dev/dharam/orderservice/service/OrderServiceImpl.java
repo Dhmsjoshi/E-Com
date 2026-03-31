@@ -42,7 +42,7 @@ public class OrderServiceImpl implements OrderService{
         for(OrderItem orderItem: order.getItems()){
             ProductDetailsDto productInfo = productServiceClient.getProductDetails(orderItem.getProductId());
 
-            if(productInfo.availableQuantity() < orderItem.getQuantity()){
+            if(productInfo.quantity() < orderItem.getQuantity()){
                 throw new RuntimeException("Product '" + productInfo.title() + "' out of stock!");
             }
 
