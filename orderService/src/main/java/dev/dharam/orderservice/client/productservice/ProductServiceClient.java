@@ -29,7 +29,7 @@ public class ProductServiceClient {
         String url = PRODUCT_SERVICE_URL + "{productId}/reduce-stock?quantity={qty}";
         log.info("Order Service: Requesting to REDUCE stock for Product ID: {} by {}", productId, quantity);
 
-        requestForEntity(HttpMethod.PUT, url, null, Void.class, productId, quantity);
+        requestForEntity(HttpMethod.PATCH, url, null, Void.class, productId, quantity);
 
         log.info("Order Service: Stock reduced successfully for Product ID: {}", productId);
     }
@@ -40,7 +40,7 @@ public class ProductServiceClient {
         String url = PRODUCT_SERVICE_URL + "{productId}/increase-stock?quantity={qty}";
         log.info("Order Service: Requesting to increase stock for Product ID: {} by {}", productId, quantity);
 
-        requestForEntity(HttpMethod.PUT, url, null, Void.class, productId, quantity);
+        requestForEntity(HttpMethod.PATCH, url, null, Void.class, productId, quantity);
     }
 
     private <T> ResponseEntity<T> requestForEntity(HttpMethod httpMethod, String url, @Nullable Object request,
