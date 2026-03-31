@@ -77,4 +77,9 @@ public class FakeStoreProductServiceImpl implements ProductService{
     public void reduceStock(Long productId, Integer quantityToReduce) {
 
     }
+
+    @Override
+    public void increaseStock(Long productId, Integer quantity) {
+
+    }
 }
