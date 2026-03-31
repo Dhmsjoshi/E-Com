@@ -2,7 +2,7 @@ package dev.dharam.orderservice.model;
 
 public enum OrderStatus {
     PENDING,
-    PLACED,
+    CONFIRMED,
     CANCELLED,
     SHIPPED,
     DELIVERED,

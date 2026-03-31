@@ -2,6 +2,8 @@ package dev.dharam.orderservice.controller;
 
 import dev.dharam.orderservice.dto.OrderRequestDto;
 import dev.dharam.orderservice.dto.OrderResponseDto;
+import dev.dharam.orderservice.dto.PaymentResultDto;
+import dev.dharam.orderservice.dto.UpdateOrdeStatusRequestDto;
 import dev.dharam.orderservice.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -11,6 +13,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,9 +38,9 @@ public class OrderController {
             @ApiResponse(responseCode = "400", description = "Invalid request data or empty cart")
     })
     @PostMapping
-    public ResponseEntity<OrderResponseDto> placeOrder(@Valid @RequestBody OrderRequestDto requestDto) {
-        // later we will get it from token
-        UUID dummyUserId = UUID.fromString("11111111-2222-3333-4444-555555555555");
+    public ResponseEntity<OrderResponseDto> placeOrder(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody OrderRequestDto requestDto) {
+
+        UUID dummyUserId = extractUserId(jwt);
 
         OrderResponseDto response = orderService.createOrder(dummyUserId, requestDto);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -54,9 +59,9 @@ public class OrderController {
     @Operation(summary = "Get current user's orders", description = "Retrieves a list of all historical orders for the logged-in user.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
     @GetMapping("/user")
-    public ResponseEntity<List<OrderResponseDto>> getUserOrders() {
-        // leter take it from token
-        UUID dummyUserId = UUID.fromString("11111111-2222-3333-4444-555555555555");
+    public ResponseEntity<List<OrderResponseDto>> getUserOrders(@AuthenticationPrincipal Jwt jwt) {
+
+        UUID dummyUserId = extractUserId(jwt);
 
         return ResponseEntity.ok(orderService.getOrdersByUserId(dummyUserId));
     }
@@ -68,11 +73,65 @@ public class OrderController {
             @ApiResponse(responseCode = "404", description = "Order not found")
     })
     @PutMapping("/{orderId}/cancel")
-    public ResponseEntity<OrderResponseDto> cancelOrder(@PathVariable Long orderId) {
-        // leter take it from token
-        UUID dummyUserId = UUID.fromString("11111111-2222-3333-4444-555555555555");
+    public ResponseEntity<OrderResponseDto> cancelOrder(@AuthenticationPrincipal Jwt jwt,@PathVariable Long orderId) {
+
+        UUID dummyUserId = extractUserId(jwt);
 
         return ResponseEntity.ok(orderService.cancelOrder(orderId, dummyUserId));
+    }
+
+    // PAYMENT CALLBACK
+    @Operation(
+            summary = "Update Payment Result",
+            description = "Automated callback for payment success/failure. Restores stock if payment fails."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order status updated"),
+            @ApiResponse(responseCode = "404", description = "Order not found")
+    })
+    @PatchMapping("/{orderId}/payment-status")
+    public ResponseEntity<Void> updatePaymentResult(@PathVariable("orderId") Long orderId,
+                                                    @RequestBody PaymentResultDto paymentResult){
+
+        if(paymentResult.isSuccess()){
+            orderService.markAsPaid(orderId);
+        }else{
+            orderService.markAsCancelled(orderId);
+        }
+        return ResponseEntity.ok().build();
+    }
+
+
+    //  ADMIN STATUS UPDATE
+    @Operation(
+            summary = "Update Order Status (Admin Only)",
+            description = "Allows admin to change status to SHIPPED, DELIVERED, or RETURNED. Restores stock if RETURNED."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Status updated successfully"),
+            @ApiResponse(responseCode = "403", description = "Access Denied - Admin role required")
+    })
+    @PatchMapping("/{orderId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<OrderResponseDto> updateStatus(@PathVariable("orderId") Long orderId,
+                                                         @Valid @RequestBody UpdateOrdeStatusRequestDto requestDto){
+
+        return ResponseEntity.ok(orderService.updateOrderStatus(orderId,requestDto.status()));
+    }
+
+
+    private UUID extractUserId(Jwt jwt) {
+        String userIdStr = jwt.getClaimAsString("user_id");
+
+        if (userIdStr == null || userIdStr.isBlank()) {
+            throw new IllegalArgumentException("User ID missing or invalid in the security token!");
+        }
+
+        try {
+            return UUID.fromString(userIdStr);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid UUID format in token!");
+        }
     }
 
 }
