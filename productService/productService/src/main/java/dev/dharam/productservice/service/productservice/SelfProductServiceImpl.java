@@ -9,6 +9,7 @@ import dev.dharam.productservice.models.Product;
 import dev.dharam.productservice.repositories.ProductRepository;
 import dev.dharam.productservice.repositories.specs.ProductSpecs;
 import dev.dharam.productservice.service.categoryservice.CategoryService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import static org.springframework.data.util.ClassUtils.ifPresent;
 
 @Service("SelfProductService")
+@Slf4j
 public class SelfProductServiceImpl implements ProductService{
 
     private final ProductRepository productRepository;
@@ -190,17 +192,28 @@ public class SelfProductServiceImpl implements ProductService{
     }
 
     @Transactional
+    @Override
     public void reduceStock(Long productId, Integer quantityToReduce) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found!"));
-
         if (product.getQuantity() < quantityToReduce) {
-            throw new RuntimeException("Out of Stock!");
+            throw new RuntimeException("Product '" + product.getTitle() + "' is out of stock!");
         }
 
         product.setQuantity(product.getQuantity() - quantityToReduce);
-
-        // Yahan save() chalte hi @Version wala magic (Optimistic Locking) trigger hoga
+        //On Save() -> Optimistic Locking
         productRepository.save(product);
+        log.info("Stock reduced for product {}. New quantity: {}", productId, product.getQuantity());
+    }
+
+    @Transactional
+    @Override
+    public void increaseStock(Long productId, Integer quantity) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found!"));
+
+        product.setQuantity(product.getQuantity() + quantity);
+        productRepository.save(product);
+        log.info("Stock increased for product {}. New quantity: {}", productId, product.getQuantity());
     }
 }
