@@ -76,8 +76,8 @@ public class OrderServiceImpl implements OrderService{
         Order order = orderRepository.findById(orderId).orElseThrow(
                 () -> new ResourceNotFoundException("Order with id: " + orderId + " not found!")
         );
-        if(!order.getUserId().equals(userId)){
-            throw new ResourceNotFoundException("Could not cancel the order with id: " + orderId);
+        if (!order.getUserId().equals(userId)) {
+            throw new ResourceNotFoundException("Could not authorize cancellation for order: " + orderId);
         }
 
         markAsCancelled(orderId);
@@ -101,9 +101,14 @@ public class OrderServiceImpl implements OrderService{
                 ()-> new ResourceNotFoundException("Order with id: " + orderId + " not found!")
         );
 
+        if(order.getPaymentStatus() == PaymentStatus.COMPLETED){
+            log.warn("Order {} is already marked as Paid, skipping duplicate update", orderId);
+            return;
+        }
         order.setStatus(OrderStatus.CONFIRMED);
         order.setPaymentStatus(PaymentStatus.COMPLETED);
         orderRepository.save(order);
+        log.info("Order {} successfully marked as Paid", orderId);
     }
 
     @Override
@@ -112,6 +117,10 @@ public class OrderServiceImpl implements OrderService{
         Order order = orderRepository.findById(orderId).orElseThrow(
                 ()-> new ResourceNotFoundException("Order with id: " + orderId + " not found!")
         );
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            return;
+        }
 
         order.setStatus(OrderStatus.CANCELLED);
         order.setPaymentStatus(PaymentStatus.CANCELLED);
@@ -127,7 +136,7 @@ public class OrderServiceImpl implements OrderService{
     @Transactional
     public OrderResponseDto updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order ID " + orderId + " nahi mila!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order ID " + orderId + " not found!"));
 
         // 1. Common Blocking Logic
         if (order.getStatus() == OrderStatus.CANCELLED || order.getStatus() == OrderStatus.DELIVERED) {
@@ -173,8 +182,24 @@ public class OrderServiceImpl implements OrderService{
         return OrderMapper.toResponseDto(updatedOrder);
     }
 
+    @Override
+    public Long getOrderAmount(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order ID " + orderId + " not found!"));
 
+        // Whitelisting Logic: Only allowed for PENDING order
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new IllegalStateException("Payment not allowed for order in " + order.getStatus() + " status.");
+        }
 
+        //Safety check
+        if(order.getPaymentStatus()== PaymentStatus.COMPLETED){
+            throw new IllegalStateException("Order is already paid");
+        }
+
+        //Use lowest denomination e.g. paise
+        return Math.round(order.getTotalAmount()*100);
+    }
 }
 
 

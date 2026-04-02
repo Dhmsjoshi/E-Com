@@ -124,6 +124,21 @@ public class OrderController {
     }
 
 
+    @Operation(
+            summary = "Get Order Amount for Payment",
+            description = "Fetches the total order amount in the smallest currency unit (Paise) for the Payment Service. Only allowed for PENDING orders."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Amount fetched successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid Order Status (Not PENDING)"),
+            @ApiResponse(responseCode = "404", description = "Order not found")
+    })
+    @GetMapping("/{orderId}/payment-amount")
+    public ResponseEntity<Long> getPaymentAmount(@PathVariable("orderID") Long orderId){
+        return ResponseEntity.ok(orderService.getOrderAmount(orderId));
+    }
+
+
     private UUID extractUserId(Jwt jwt) {
         String userIdStr = jwt.getClaimAsString("user_id");
 

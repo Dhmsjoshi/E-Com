@@ -17,5 +17,6 @@ public interface OrderService {
     void markAsPaid(Long orderId);
     void markAsCancelled(Long orderId);
     OrderResponseDto updateOrderStatus(Long orderId, OrderStatus  orderStatus);
+    Long getOrderAmount(Long orderId);
 
 }
