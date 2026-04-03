@@ -134,7 +134,7 @@ public class OrderController {
             @ApiResponse(responseCode = "404", description = "Order not found")
     })
     @GetMapping("/{orderId}/payment-amount")
-    public ResponseEntity<Long> getPaymentAmount(@PathVariable("orderID") Long orderId){
+    public ResponseEntity<Long> getPaymentAmount(@PathVariable("orderId") Long orderId){
         return ResponseEntity.ok(orderService.getOrderAmount(orderId));
     }
 

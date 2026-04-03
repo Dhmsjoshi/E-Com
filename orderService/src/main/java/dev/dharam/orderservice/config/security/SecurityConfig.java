@@ -2,6 +2,7 @@ package dev.dharam.orderservice.config.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,10 +20,17 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Order endpoints ko secure karo
-                        .requestMatchers("/api/v1/orders/**").authenticated()
-                        // Swagger UI ko allow karna mat bhulna agar use kar rahe ho
+                        // 1. Swagger aur API Docs ko allow karo
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+                        // 2. INTERNAL ENDPOINTS (Inhe token ki zarurat nahi hai)
+                        // Inhe authenticated() se PEHLE rakhna zaruri hai
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/orders/*/payment-status").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/orders/*/payment-amount").permitAll()
+
+                        // 3. Baaki saare order endpoints secure rahenge
+                        .requestMatchers("/api/v1/orders/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
