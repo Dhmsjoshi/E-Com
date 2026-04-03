@@ -21,6 +21,7 @@ public class SecurityUser implements UserDetails, Serializable {
     private UUID id;
     private String email;
     private String password;
+    private String phoneNumber;
     private List<SimpleGrantedAuthority> authorities;
 
     // 1. No-args constructor (Jackson ke liye mandatory hai)
@@ -30,6 +31,7 @@ public class SecurityUser implements UserDetails, Serializable {
         this.id = user.getId();
         this.email = user.getEmail();
         this.password = user.getPassword();
+        this.phoneNumber = user.getPhoneNumber();
         this.authorities = authorities;
     }
 
@@ -39,6 +41,9 @@ public class SecurityUser implements UserDetails, Serializable {
 
     @Override
     public String getPassword() { return this.password; }
+
+
+    public String getPhoneNumber(){return this.phoneNumber;}
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() { return this.authorities; }

@@ -157,7 +157,9 @@ public class AuthorizationServerConfig {
 
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
-        return AuthorizationServerSettings.builder().build();
+        return AuthorizationServerSettings.builder()
+                .issuer("http://localhost:8080")
+                .build();
     }
 
     @Bean
@@ -189,10 +191,12 @@ public class AuthorizationServerConfig {
 
                     if (principal.getPrincipal() instanceof SecurityUser user) {
                         claims.put("user_id", user.getId());
+                        claims.put("email", user.getUsername());
+                        claims.put("phone_number", user.getPhoneNumber());
                     }
 
                     String clientId = context.getRegisteredClient().getClientId();
-                    claims.put("aud", List.of(clientId, "productService", "orderService","cartService"));
+                    claims.put("aud", List.of(clientId, "productService", "orderService", "cartService", "paymentService"));
                 });
             }
 

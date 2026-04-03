@@ -1,5 +1,6 @@
 package dev.dharam.authservice.oAuth2.security.config;
 
+import dev.dharam.authservice.oAuth2.models.SecurityUser;
 import dev.dharam.authservice.oAuth2.repositories.JpaRegisteredClientRepository;
 import dev.dharam.authservice.oAuth2.services.JpaOAuth2AuthorizationService;
 import jakarta.servlet.ServletException;
@@ -113,15 +114,21 @@ public class CustomLoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private String generateToken(Authentication authentication, String type, Instant now) {
         JwtClaimsSet.Builder claimsBuilder = JwtClaimsSet.builder()
-                .issuer("http://auth-service:8080")
+                .issuer("http://localhost:8080")
                 .subject(authentication.getName())
                 .issuedAt(now);
 
         if ("access_token".equals(type)) {
-            claimsBuilder.audience(List.of("productService", "orderService","cartService"))
+            claimsBuilder.audience(List.of("productService", "orderService", "cartService", "paymentService"))
                     .expiresAt(now.plus(Duration.ofHours(2)))
                     .claim("roles", authentication.getAuthorities().stream()
                             .map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
+
+            if(authentication.getPrincipal() instanceof SecurityUser user){
+                claimsBuilder.claim("user_id", user.getId());
+                claimsBuilder.claim("email", user.getUsername());
+                claimsBuilder.claim("phone_number",user.getPhoneNumber());
+            }
         } else {
             claimsBuilder.audience(List.of("ecom-web-client"))
                     .expiresAt(now.plus(Duration.ofHours(1)))
