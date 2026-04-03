@@ -23,14 +23,22 @@ public class RazorpayAdapter implements PaymentGatewayAdepter {
     @Override
     public Map<String, String> createPaymentLink(Long orderId, Long amount, String email, String phoneNumber) {
         try{
+
+
             //prepare request body (JSON format)
             JSONObject paymentLinkRequest = new JSONObject();
+            paymentLinkRequest.put("reference_id", String.valueOf(orderId));
             paymentLinkRequest.put("amount", amount);
             paymentLinkRequest.put("currency", "INR");
             paymentLinkRequest.put("accept_partial", false);
 
-            //set expiry after 15 min
-            paymentLinkRequest.put("expire_by", Instant.now().getEpochSecond()+900);
+            //set expiry
+            long currentTimeInSeconds = Instant.now().getEpochSecond();
+
+// Kam se kam 20-30 minute aage ka time rakho (15 min se zyada)
+// 15 minutes = 900 seconds. Hum 20 minutes (1200 seconds) le rahe hain safety ke liye.
+            long expiryTime = currentTimeInSeconds + (20 * 60);
+            paymentLinkRequest.put("expire_by", expiryTime);
             paymentLinkRequest.put("reference_id", orderId.toString());
             paymentLinkRequest.put("description", "Payment for Order #"+orderId);
 
@@ -51,8 +59,10 @@ public class RazorpayAdapter implements PaymentGatewayAdepter {
             notify.put("email", true);
             paymentLinkRequest.put("notify", notify);
 
+            String ngrokBaseUrl = "https://aline-pseudohemal-soppingly.ngrok-free.dev";
+
             //callbacks(after payment, it redirects)
-            paymentLinkRequest.put("callback_url", "http://localhost:8081/api/v1/orders/confirm");
+            paymentLinkRequest.put("callback_url", ngrokBaseUrl + "/api/v1/payments/success-page");
             paymentLinkRequest.put("callback_method", "get");
 
             //generate link from Razorpay SDK

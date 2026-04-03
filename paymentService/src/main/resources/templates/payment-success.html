@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Payment Successful</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 100px; background-color: #f4f4f9; }
+        .card { background: white; padding: 40px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { color: #28a745; }
+        p { color: #555; }
+        .btn { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>✔ Payment Successful!</h1>
+    <p>Aapka order successfully place ho gaya hai.</p>
+    <p><b>Transaction ID:</b> <span th:text="${paymentId}"></span></p>
+    <a href="#" class="btn">Back to Shop</a>
+</div>
+</body>
+</html>

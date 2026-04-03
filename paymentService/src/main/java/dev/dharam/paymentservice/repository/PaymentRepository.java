@@ -13,5 +13,5 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
      Payment save(Payment payment);
 
 
-    Optional<Payment> findByExternalReferenceId(String externalReferenceId);
+    Optional<Payment> findByExternalOrderId(String externalOrderId);
 }

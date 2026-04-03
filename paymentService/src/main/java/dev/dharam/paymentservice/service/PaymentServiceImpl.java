@@ -22,7 +22,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentServiceImpl implements PaymentService{
-    @Value("{razorpay.webhook.secret}")
+    @Value("${razorpay.webhook.secret}")
     private String secret;
 
     private final PaymentGatewayAdepter paymentGatewayAdepter;
@@ -54,6 +54,8 @@ public class PaymentServiceImpl implements PaymentService{
                 .externalOrderId(paymentLinkId) // payment_link_id
                 .paymentLinkUrl(paymentUrl) // generated payment url
                 .idempotencyKey(UUID.randomUUID().toString()) // for safety
+                .externalReferenceId(String.valueOf(orderId))
+
                 .build();
 
         paymentRepository.save(payment);
@@ -83,7 +85,7 @@ public class PaymentServiceImpl implements PaymentService{
                     .getString("id"); // Ye 'pay_xxx' hai
 
             // Fetch Database  PENDING record
-            Payment payment = paymentRepository.findByExternalReferenceId(paymentLinkId)
+            Payment payment = paymentRepository.findByExternalOrderId(paymentLinkId)
                     .orElseThrow(() -> new RuntimeException("Payment record not found for: " + paymentLinkId));
 
             // 4. Status Update
