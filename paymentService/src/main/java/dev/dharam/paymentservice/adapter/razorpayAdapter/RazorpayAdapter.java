@@ -11,6 +11,8 @@ import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -19,7 +21,7 @@ public class RazorpayAdapter implements PaymentGatewayAdepter {
     private final RazorpayClient razorpayClient;
 
     @Override
-    public String createPaymentLink(Long orderId, Long amount, String email,String phoneNumber) {
+    public Map<String, String> createPaymentLink(Long orderId, Long amount, String email, String phoneNumber) {
         try{
             //prepare request body (JSON format)
             JSONObject paymentLinkRequest = new JSONObject();
@@ -32,11 +34,15 @@ public class RazorpayAdapter implements PaymentGatewayAdepter {
             paymentLinkRequest.put("reference_id", orderId.toString());
             paymentLinkRequest.put("description", "Payment for Order #"+orderId);
 
+            String formattedphoneNumber = phoneNumber;
+            if (phoneNumber != null && !phoneNumber.startsWith("+")){
+                formattedphoneNumber = "+91"+phoneNumber;
+            }
             //customer info
             JSONObject customer = new JSONObject();
-            customer.put("contact", phoneNumber);
+            customer.put("contact", formattedphoneNumber);
             customer.put("email", email);
-            customer.put("name", "Dharmesh Joshi");
+
 
             paymentLinkRequest.put("customer", customer);
 
@@ -52,8 +58,11 @@ public class RazorpayAdapter implements PaymentGatewayAdepter {
             //generate link from Razorpay SDK
             PaymentLink paymentLink = razorpayClient.paymentLink.create(paymentLinkRequest);
 
-            //Short_url to show to users
-            return paymentLink.get("short_url").toString();
+            Map<String, String> response= new HashMap<>();
+            response.put("payment_link_url", paymentLink.get("short_url").toString()); //Short_url to show to users
+            response.put("payment_link_id", paymentLink.get("id").toString()); // for our database
+
+            return response;
 
 
         }catch (RazorpayException e){

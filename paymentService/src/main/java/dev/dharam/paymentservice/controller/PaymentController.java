@@ -2,17 +2,16 @@ package dev.dharam.paymentservice.controller;
 
 import dev.dharam.paymentservice.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/payments")
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -24,10 +23,21 @@ public class PaymentController {
             ){
 
         String email = jwt.getClaimAsString("email");
-        String phoneNumber =jwt.getClaimAsString("phoneNumber");
+        String phoneNumber =jwt.getClaimAsString("phone_number");
 
         String paymentLink = paymentService.createPaymentLink(orderId,email,phoneNumber);
         return ResponseEntity.ok(paymentLink);
+    }
+
+    @PostMapping("/webhook")
+    public  ResponseEntity<String> handleWebhook(
+            @RequestBody String payload,
+            @RequestHeader("X-Razorpay-Signature") String signature
+    ){
+
+        log.info("Webhook received!");
+        paymentService.processWebhook(payload,signature);
+        return ResponseEntity.ok("OK");
     }
 
 

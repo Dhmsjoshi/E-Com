@@ -1,5 +1,6 @@
 package dev.dharam.paymentservice.client.orderservice;
 
+import dev.dharam.paymentservice.dto.PaymentResultDto;
 import dev.dharam.paymentservice.exception.ResourceNotFoundException;
 import dev.dharam.paymentservice.exception.ServiceUnavailableException;
 import jakarta.annotation.Nullable;
@@ -28,6 +29,25 @@ public class OrderServiceClient {
 
         ResponseEntity<Long> response = requestForEntity(HttpMethod.GET, url, null, Long.class, orderId);
         return Objects.requireNonNull(response.getBody(), "Order Service returned aempty amount");
+    }
+
+    public void updatePaymentStatus(Long orderId, boolean isSuccess, String transactionId){
+        String url = ORDER_SERVICE_BASE_URL+"{orderId}/payment-status";
+
+        PaymentResultDto paymentResult =new PaymentResultDto(
+            isSuccess,
+            isSuccess ?"Payment Successful" : "Payment failed",
+            transactionId
+        );
+
+        requestForEntity(
+                HttpMethod.PATCH,
+                url,
+                paymentResult,
+                Void.class,
+                orderId
+        );
+        log.info("Order Service status update request sent successfully for Order ID: {}", orderId);
     }
 
 
