@@ -5,6 +5,7 @@ import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import dev.dharam.paymentservice.adapter.PaymentGatewayAdepter;
 import dev.dharam.paymentservice.model.PaymentProvider;
+import dev.dharam.paymentservice.model.PaymentStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
@@ -80,6 +81,22 @@ public class RazorpayAdapter implements PaymentGatewayAdepter {
             throw new RuntimeException("Razorpay payment initiation failed!");
         }
 
+    }
+
+    @Override
+    public PaymentStatus getStatus(String externalOrderId) {
+        try{
+            PaymentLink link = razorpayClient.paymentLink.fetch(externalOrderId);
+            String status = link.get("status");
+            return switch (status){
+                case "paid" -> PaymentStatus.SUCCESS;
+                case "expired", "cancelled" -> PaymentStatus.FAILED;
+                default -> PaymentStatus.PENDING;
+            };
+        }catch (RazorpayException e){
+            return PaymentStatus.PENDING;
+        }
+        return null;
     }
 
     @Override

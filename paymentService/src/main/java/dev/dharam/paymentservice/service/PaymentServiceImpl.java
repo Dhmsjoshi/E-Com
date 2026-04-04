@@ -12,10 +12,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -34,6 +36,13 @@ public class PaymentServiceImpl implements PaymentService{
 
         log.info("Payment process started for Order ID: {}",orderId);
 
+        //to avoid if exists already
+        Optional<Payment> existingPayment = paymentRepository.findByOrderId(orderId);
+        if(existingPayment.isPresent()){
+            log.info("Payment already exists for Order ID: {}. Returning existing URL.",orderId);
+            return existingPayment.get().getPaymentLinkUrl();
+        }
+        //If no existing link, go ahead
         //Fetch the amount from Order Service client
         Long amount = orderServiceClient.getOrderAmount(orderId);
         log.info("Amount received from Order Servie: {} for Order: {}",amount,orderId);
@@ -53,12 +62,19 @@ public class PaymentServiceImpl implements PaymentService{
                 .gatewayName(PaymentProvider.RAZORPAY.toString())
                 .externalOrderId(paymentLinkId) // payment_link_id
                 .paymentLinkUrl(paymentUrl) // generated payment url
-                .idempotencyKey(UUID.randomUUID().toString()) // for safety
+                .idempotencyKey(UUID.randomUUID().toString()) // for safety and avoid duplicate entry in DB
                 .externalReferenceId(String.valueOf(orderId))
 
                 .build();
 
-        paymentRepository.save(payment);
+        try{
+            paymentRepository.save(payment);
+        }catch (DataIntegrityViolationException e){
+            //if DB fails, we do not get new link instead same link
+            log.warn("Duplicate payment request for order {}. Fetching existing link.", orderId);
+            return paymentRepository.findByOrderId(orderId).get().getPaymentLinkUrl();
+        }
+
 
         return paymentUrl;
 
