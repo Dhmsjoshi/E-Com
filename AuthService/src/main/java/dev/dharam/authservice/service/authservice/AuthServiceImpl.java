@@ -1,6 +1,8 @@
 package dev.dharam.authservice.service.authservice;
 
 import dev.dharam.authservice.config.appconfig.ApplicationConstants;
+import dev.dharam.authservice.config.kafka.KafkaTopics;
+import dev.dharam.authservice.config.kafka.dto.UserRegisteredEvent;
 import dev.dharam.authservice.dtos.InternalLoginResultDto;
 import dev.dharam.authservice.dtos.UserResponseDto;
 import dev.dharam.authservice.exception.ResourceAlreadyExistsException;
@@ -14,6 +16,7 @@ import dev.dharam.authservice.repository.SessionRepository;
 import dev.dharam.authservice.repository.UserRepository;
 import dev.dharam.authservice.security.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -37,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
     private final RoleRepository roleRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
 
 
@@ -57,6 +61,15 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(password));
         user.setRoles(Set.of(customRole));
         User savedUser = userRepository.save(user);
+
+        //Event
+        UserRegisteredEvent event = new UserRegisteredEvent(
+                savedUser.getId(),
+                savedUser.getEmail(),
+                "Welcome to Shoppingly!, "+savedUser.getEmail().split("@")[0]+"!"
+        );
+
+        kafkaTemplate.send(KafkaTopics.USER_REGISTRATION, event);
 
 
         return UserResponseDto.from(savedUser);
