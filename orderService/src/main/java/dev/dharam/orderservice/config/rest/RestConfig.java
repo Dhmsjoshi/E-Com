@@ -17,8 +17,8 @@ public class RestConfig {
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
         return builder
-                .connectTimeout(Duration.ofSeconds(5))
-                .readTimeout(Duration.ofSeconds(5))
+                .setConnectTimeout(Duration.ofSeconds(5))
+                .setReadTimeout(Duration.ofSeconds(5))
                 .additionalInterceptors((request, body, execution) -> {
                     // 1. Current Security Context se Authentication object nikalo
                     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
