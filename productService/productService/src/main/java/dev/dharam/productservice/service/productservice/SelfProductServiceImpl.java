@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.springframework.data.util.ClassUtils.ifPresent;
+
 
 @Service("SelfProductService")
 @Slf4j
@@ -175,7 +175,7 @@ public class SelfProductServiceImpl implements ProductService{
 
         Pageable pageable = PageRequest.of(criteria.pageNum(), criteria.pageSize(), sorting);
 
-        Specification<Product> spec = Specification.unrestricted();
+        Specification<Product> spec = Specification.where(null);
 
         spec = spec.and(ProductSpecs.isNotDeleted())
                 .and(ProductSpecs.hasCategory(criteria.categoryId()))
