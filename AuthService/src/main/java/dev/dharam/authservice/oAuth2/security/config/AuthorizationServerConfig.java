@@ -60,27 +60,23 @@ public class AuthorizationServerConfig {
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
             throws Exception {
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-                OAuth2AuthorizationServerConfigurer.authorizationServer();
+        //  Default Authorization Server Security apply
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
+        //  OpenID Connect 1.0 ko enable via configurer
+        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+                .oidc(Customizer.withDefaults()); // Enable OpenID Connect 1.0
         http
-                .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
-                .with(authorizationServerConfigurer, (authorizationServer) ->
-                        authorizationServer
-                                .oidc(Customizer.withDefaults())	// Enable OpenID Connect 1.0
-                )
-                .authorizeHttpRequests((authorize) ->
-                        authorize
-                                .anyRequest().authenticated()
-                )
-                // Redirect to the login page when not authenticated from the
-                // authorization endpoint
+
                 .exceptionHandling((exceptions) -> exceptions
                         .defaultAuthenticationEntryPointFor(
                                 new LoginUrlAuthenticationEntryPoint("/login"),
                                 new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                         )
-                );
+                )
+                // Token validation
+                .oauth2ResourceServer((resourceServer) -> resourceServer
+                        .jwt(Customizer.withDefaults()));
 
         return http.build();
     }
@@ -91,7 +87,7 @@ public class AuthorizationServerConfig {
             throws Exception {
         System.out.println("Loading Updated App Security Config...");
         http
-                // 1. CORS enable kiya (frontend connection ke liye)
+
                 .cors(Customizer.withDefaults())
 
                 // 2. CSRF handling: APIs ke liye disable, login form ke liye enabled
