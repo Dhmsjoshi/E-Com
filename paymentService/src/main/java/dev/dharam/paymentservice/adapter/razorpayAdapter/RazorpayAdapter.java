@@ -96,7 +96,7 @@ public class RazorpayAdapter implements PaymentGatewayAdepter {
         }catch (RazorpayException e){
             return PaymentStatus.PENDING;
         }
-        return null;
+//        return null;
     }
 
     @Override
