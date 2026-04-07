@@ -18,7 +18,7 @@ import java.util.Map;
 @Slf4j
 public class ProductServiceClient {
     private final RestTemplate restTemplate;
-    private final String PRODUCT_SERVICE_URL = "http://localhost:8081/products/";
+    private final String PRODUCT_SERVICE_URL = "http://productService/products/";
 
 
     public ProductDetailsDto getProductDetails(Long productId) {
