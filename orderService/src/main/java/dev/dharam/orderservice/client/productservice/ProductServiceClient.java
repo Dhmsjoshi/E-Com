@@ -16,7 +16,7 @@ import org.springframework.web.client.*;
 @Slf4j
 public class ProductServiceClient {
     private final RestTemplate restTemplate;
-    private final String PRODUCT_SERVICE_URL = "http://localhost:8081/products/";
+    private final String PRODUCT_SERVICE_URL = "http://productService/products/";
 
     public ProductDetailsDto  getProductDetails(Long productId) {
         String url = PRODUCT_SERVICE_URL + "{productId}";
