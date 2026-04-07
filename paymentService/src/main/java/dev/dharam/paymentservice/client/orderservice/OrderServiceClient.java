@@ -20,7 +20,7 @@ import java.util.Objects;
 public class OrderServiceClient {
 
     private final RestTemplate restTemplate;
-    private final String ORDER_SERVICE_BASE_URL ="http://localhost:8083/api/v1/orders/";
+    private final String ORDER_SERVICE_BASE_URL ="http://orderService/api/v1/orders/";
 
 
     public Long getOrderAmount(Long orderId){
