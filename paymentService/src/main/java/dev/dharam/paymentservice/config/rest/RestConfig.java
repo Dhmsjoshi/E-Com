@@ -1,5 +1,6 @@
 package dev.dharam.paymentservice.config.rest;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
@@ -8,12 +9,17 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
 
 @Configuration
 public class RestConfig {
+
+    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+    private String jwkSetUri;
 
     @Bean
     @LoadBalanced
@@ -33,6 +39,13 @@ public class RestConfig {
 
                     return execution.execute(request, body);
                 })
+                .build();
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder(RestTemplate restTemplate) {
+        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
+                .restOperations(restTemplate)
                 .build();
     }
 }
