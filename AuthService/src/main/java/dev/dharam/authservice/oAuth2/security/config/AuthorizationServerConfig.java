@@ -176,30 +176,50 @@ public class AuthorizationServerConfig {
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
         return (context) -> {
-            // Access Token ke liye
+            // Claims will be added only for Access Token
             if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
-                Authentication principal = context.getPrincipal();
-                context.getClaims().claims((claims) -> {
-                    Set<String> roles = principal.getAuthorities().stream()
-                            .map(GrantedAuthority::getAuthority)
-                            .collect(Collectors.toSet());
-                    claims.put("roles", roles);
 
-                    if (principal.getPrincipal() instanceof SecurityUser user) {
-                        claims.put("user_id", user.getId());
-                        claims.put("email", user.getUsername());
-                        claims.put("phone_number", user.getPhoneNumber());
+                context.getClaims().claims((claims) -> {
+                    // 1. Get Metadata from RegisteredClient (Which we saved in ClientService)
+                    Boolean isInternal = (Boolean) context.getRegisteredClient()
+                            .getClientSettings()
+                            .getSettings()
+                            .get("is-internal-service");
+
+                    // 2. Logic for Internal Services (M2M / Client Credentials)
+                    if (Boolean.TRUE.equals(isInternal)) {
+                        Set<String> roles = Set.of("ROLE_SYSTEM");
+                        claims.put("roles", roles);
+                        claims.put("client_type", "INTERNAL_SERVICE");
+                        // Internal services ke liye user_id ya email nahi hota, isliye skip
+                    }
+                    // 3. Logic for Normal Users (Auth Code Flow)
+                    else {
+                        Authentication principal = context.getPrincipal();
+
+                        // Extract Roles
+                        Set<String> roles = principal.getAuthorities().stream()
+                                .map(GrantedAuthority::getAuthority)
+                                .collect(Collectors.toSet());
+                        claims.put("roles", roles);
+
+                        // Extract User Details
+                        if (principal.getPrincipal() instanceof SecurityUser user) {
+                            claims.put("user_id", user.getId());
+                            claims.put("email", user.getUsername());
+                            claims.put("phone_number", user.getPhoneNumber());
+                        }
                     }
 
+                    // 4. Common Claims (Audience)
                     String clientId = context.getRegisteredClient().getClientId();
                     claims.put("aud", List.of(clientId, "productService", "orderService", "cartService", "paymentService"));
                 });
             }
 
-            // ID Token ke liye (Jab OIDC flow ya Refresh flow chale)
+            // ID Token Logic (Keep it same)
             if ("id_token".equals(context.getTokenType().getValue())) {
                 context.getClaims().claim("auth_method", "form_login");
-                // Yahan aap extra identity claims daal sakte ho
             }
         };
     }

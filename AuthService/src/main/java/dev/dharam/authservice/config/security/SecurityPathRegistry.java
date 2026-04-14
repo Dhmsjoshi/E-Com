@@ -10,7 +10,8 @@ public class SecurityPathRegistry {
             "/api/auth/signup",
             "/api/auth/login",
             "/api/auth/refresh-token",
-            "/api/auth/logout" // Logout ko bhi yahan rakh sakte hain agar token validation filter handle kar raha hai
+            "/api/auth/logout",
+            // Logout ko bhi yahan rakh sakte hain agar token validation filter handle kar raha hai
     };
 
     // 2. Swagger & Documentation URLs

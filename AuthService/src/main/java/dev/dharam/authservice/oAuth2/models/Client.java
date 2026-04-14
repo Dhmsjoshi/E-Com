@@ -54,4 +54,8 @@ public class Client extends BaseModel {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String tokenSettings;
 
+    @Builder.Default
+    @Column(name = "is_internal_service", nullable = false)
+    private boolean isInternalService = false;
+
 }

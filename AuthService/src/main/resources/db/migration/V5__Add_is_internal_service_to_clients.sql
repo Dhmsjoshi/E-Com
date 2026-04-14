@@ -1,0 +1,2 @@
+ALTER TABLE `client`
+    ADD COLUMN is_internal_service BOOLEAN NOT NULL DEFAULT FALSE;

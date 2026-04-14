@@ -122,7 +122,9 @@ public class CustomLoginSuccessHandler implements AuthenticationSuccessHandler {
             claimsBuilder.audience(List.of("productService", "orderService", "cartService", "paymentService"))
                     .expiresAt(now.plus(Duration.ofHours(2)))
                     .claim("roles", authentication.getAuthorities().stream()
-                            .map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
+                            .map(GrantedAuthority::getAuthority)
+                            .filter(role-> role != null)
+                            .collect(Collectors.toList()));
 
             if(authentication.getPrincipal() instanceof SecurityUser user){
                 claimsBuilder.claim("user_id", user.getId());
