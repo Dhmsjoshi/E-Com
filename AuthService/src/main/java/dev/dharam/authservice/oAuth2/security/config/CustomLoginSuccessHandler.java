@@ -126,10 +126,16 @@ public class CustomLoginSuccessHandler implements AuthenticationSuccessHandler {
                             .filter(role-> role != null)
                             .collect(Collectors.toList()));
 
-            if(authentication.getPrincipal() instanceof SecurityUser user){
-                claimsBuilder.claim("user_id", user.getId());
-                claimsBuilder.claim("email", user.getUsername());
-                claimsBuilder.claim("phone_number",user.getPhoneNumber());
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof SecurityUser user) {
+                // Agar koi field null hui, toh default value do taaki claim crash na ho
+                claimsBuilder.claim("user_id", user.getId() != null ? user.getId() : "unknown");
+                claimsBuilder.claim("email", user.getUsername() != null ? user.getUsername() : "no-email");
+                claimsBuilder.claim("phone_number", user.getPhoneNumber() != null ? user.getPhoneNumber() : "0000000000");
+            } else {
+                // Agar principal SecurityUser nahi hai, toh debug ke liye log daalo
+                System.out.println("DEBUG: Principal is not SecurityUser, it is: " + principal.getClass().getName());
+                claimsBuilder.claim("user_id", "default-admin");
             }
         } else {
             claimsBuilder.audience(List.of("ecom-web-client"))
