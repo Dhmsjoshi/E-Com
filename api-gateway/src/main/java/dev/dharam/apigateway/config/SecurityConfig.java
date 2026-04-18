@@ -1,18 +1,23 @@
 package dev.dharam.apigateway.config;
 
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
-import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.*;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -43,18 +48,34 @@ public class SecurityConfig {
         return http.build();
     }
 
+//    @Bean
+//    @LoadBalanced
+//    public WebClient.Builder lbWebClientBuilder() {
+//        return WebClient.builder();
+//    }
+
     @Bean
-    @LoadBalanced
-    public WebClient.Builder lbWebClientBuilder() {
-        return WebClient.builder();
+    public ReactiveJwtDecoder jwtDecoder() {
+        // Startup error se bachne ke liye yahan direct WebClient use kar rahe hain
+        return NimbusReactiveJwtDecoder.withJwkSetUri(jwkSetUri)
+                .webClient(WebClient.builder().build())
+                .build();
     }
 
     @Bean
-    public ReactiveJwtDecoder jwtDecoder(WebClient.Builder builder) {
-           // Use Reactive version and pass  builder
-        return NimbusReactiveJwtDecoder.withJwkSetUri(jwkSetUri)
-                .webClient(builder.build())
-                .build();
+    public Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
+        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
+
+        ReactiveJwtAuthenticationConverter jwtAuthenticationConverter = new ReactiveJwtAuthenticationConverter();
+
+        // FIX: Mono ki jagah Flux.fromIterable use karein
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
+                jwt -> Flux.fromIterable(grantedAuthoritiesConverter.convert(jwt))
+        );
+
+        return jwtAuthenticationConverter;
     }
 
 }
