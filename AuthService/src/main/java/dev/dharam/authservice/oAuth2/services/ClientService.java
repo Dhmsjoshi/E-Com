@@ -42,6 +42,7 @@ public class ClientService {
                 .clientName(dto.clientName())
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .scopes(scopes -> scopes.addAll(dto.scopes()))
+
                 .tokenSettings(TokenSettings.builder()
                         .accessTokenTimeToLive(Duration.ofHours(2))
                         .build());

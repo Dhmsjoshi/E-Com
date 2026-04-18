@@ -12,14 +12,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
@@ -29,9 +28,10 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
-import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -58,49 +58,57 @@ public class AuthorizationServerConfig {
 
     @Bean
     @Order(1)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
+    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http )
             throws Exception {
         //  Default Authorization Server Security apply
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
+        http.csrf(csrf-> csrf.ignoringRequestMatchers("/oauth2/**"));
+
+        http.formLogin(Customizer.withDefaults());
         //  OpenID Connect 1.0 ko enable via configurer
         http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
                 .oidc(Customizer.withDefaults()); // Enable OpenID Connect 1.0
         http
+                .securityMatcher("/oauth2/**")
 
                 .exceptionHandling((exceptions) -> exceptions
-                        .defaultAuthenticationEntryPointFor(
-                                new LoginUrlAuthenticationEntryPoint("/login"),
-                                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
-                        )
-                )
-                // Token validation
-                .oauth2ResourceServer((resourceServer) -> resourceServer
-                        .jwt(Customizer.withDefaults()));
+                        .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
+                );
 
         return http.build();
     }
 
     @Bean
     @Order(2)
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
+    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http,
+                                                          JwtAuthenticationConverter jwtAuthenticationConverter,
+                                                          JwtDecoder jwtDecoder)
             throws Exception {
         System.out.println("Loading Updated App Security Config...");
         http
 
                 .cors(Customizer.withDefaults())
 
+
                 // 2. CSRF handling: APIs ke liye disable, login form ke liye enabled
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(pathRegistry.PUBLIC_POST_URLS)
                         .ignoringRequestMatchers("/api/v1/clients/register")
+                        .ignoringRequestMatchers("/oauth2/**","/api/**")
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .decoder(jwtDecoder) // Yahan decoder call karo
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter)
+                        )
                 )
 
                 // 3. Authorization logic using your Registry
                 .authorizeHttpRequests((authorize) -> authorize
+                        .requestMatchers("/login","/oauth2/**", "/error").permitAll()
                         .requestMatchers(pathRegistry.SWAGGER_URLS).permitAll()
                         .requestMatchers(pathRegistry.PUBLIC_POST_URLS).permitAll()
-                        .requestMatchers("/login", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
 
@@ -116,6 +124,9 @@ public class AuthorizationServerConfig {
                         .deleteCookies("refresh_token", "JSESSIONID")
                         .logoutSuccessUrl("/login?logout")
                 );
+        http.sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+        );
 
         return http.build();
     }
@@ -188,7 +199,7 @@ public class AuthorizationServerConfig {
 
                     // 2. Logic for Internal Services (M2M / Client Credentials)
                     if (Boolean.TRUE.equals(isInternal)) {
-                        Set<String> roles = Set.of("ROLE_SYSTEM");
+                        Set<String> roles = Set.of("SYSTEM");
                         claims.put("roles", roles);
                         claims.put("client_type", "INTERNAL_SERVICE");
                         // Internal services ke liye user_id ya email nahi hota, isliye skip
@@ -199,7 +210,7 @@ public class AuthorizationServerConfig {
 
                         // Extract Roles
                         Set<String> roles = principal.getAuthorities().stream()
-                                .map(GrantedAuthority::getAuthority)
+                                .map(authority -> authority.getAuthority().replace("ROLE_", "")) // Agar DB mein ROLE_ ke sath hai toh hata do
                                 .collect(Collectors.toSet());
                         claims.put("roles", roles);
 
@@ -232,5 +243,19 @@ public class AuthorizationServerConfig {
     @Bean
     public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
         return new NimbusJwtEncoder(jwkSource);
+    }
+
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        // Token mein aapka claim "roles" naam se hai
+        grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
+        // Agar token mein "ROLE_ADMIN" hai, toh prefix "" rakho.
+        // Agar sirf "ADMIN" hai, toh "ROLE_" likho.
+        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
+
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+        return jwtAuthenticationConverter;
     }
 }

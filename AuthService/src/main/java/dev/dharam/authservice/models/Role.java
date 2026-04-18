@@ -14,7 +14,7 @@ import lombok.Setter;
 @Table(name = "roles")
 public class Role extends BaseModel{
     @NotBlank(message = "Role name cannot be empty")
-    @Pattern(regexp = "^ROLE_[A-Z]+$", message = "Role name must start with ROLE_ and be in uppercase")
+    @Pattern(regexp = "^[A-Z]+$", message = "Role name must start with ROLE_ and be in uppercase")
     @Column(nullable = false, unique = true, length = 50)
     private String name; // e.g., ROLE_ADMIN, ROLE_CUSTOMER
 

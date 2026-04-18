@@ -101,10 +101,13 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
                 .postLogoutRedirectUris((uris) -> uris.addAll(postLogoutRedirectUris))
                 .scopes((scopes) -> scopes.addAll(clientScopes));
 
-        Map<String, Object> clientSettingsMap = parseMap(client.getClientSettings());
+        // Client Settings: Copying to a new HashMap to avoid UnsupportedOperationException
+        Map<String, Object> clientSettingsMap = new HashMap<>(parseMap(client.getClientSettings()));
+        clientSettingsMap.put("is-internal-service", client.isInternalService());
         builder.clientSettings(ClientSettings.withSettings(clientSettingsMap).build());
 
-        Map<String, Object> tokenSettingsMap = parseMap(client.getTokenSettings());
+        // Token Settings: Also copying to a new HashMap for consistency and safety
+        Map<String, Object> tokenSettingsMap = new HashMap<>(parseMap(client.getTokenSettings()));
         builder.tokenSettings(TokenSettings.withSettings(tokenSettingsMap).build());
 
         return builder.build();
@@ -127,6 +130,9 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
         Instant now = Instant.now();
         entity.setCreatedAt(now);
         entity.setUpdatedAt(now);
+
+        Boolean isInternal = registeredClient.getClientSettings().getSetting("is-internal-service");
+        entity.setInternalService(Boolean.TRUE.equals(isInternal));
 
         entity.setClientId(registeredClient.getClientId());
         entity.setClientIdIssuedAt(registeredClient.getClientIdIssuedAt() != null ?
