@@ -63,6 +63,7 @@ public class ProductController {
             @ApiResponse(responseCode = "400", description = "Invalid ID format (must be a positive number)",
                     content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
     })
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'SYSTEM')")
     public ResponseEntity<ProductResponseDto> getProductById(
             @PathVariable("productId")
             @NotNull(message = "ID is required")
@@ -167,6 +168,7 @@ public class ProductController {
             @ApiResponse(responseCode = "400", description = "Insufficient stock")
     })
     @PatchMapping("/{id}/reduce-stock")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM')")
     public ResponseEntity<Void> reduceStock(
             @PathVariable("id") Long productId,
             @RequestParam("quantity") Integer quantity) {
@@ -177,6 +179,7 @@ public class ProductController {
 
     @Operation(summary = "Increase product stock", description = "Partial update to restore stock")
     @PatchMapping("/{id}/increase-stock")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM')")
     public ResponseEntity<Void> increaseStock(
             @PathVariable("id") Long productId,
             @RequestParam("quantity") Integer quantity) {
