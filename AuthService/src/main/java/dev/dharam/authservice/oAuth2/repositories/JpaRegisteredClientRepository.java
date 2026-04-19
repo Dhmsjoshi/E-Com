@@ -156,6 +156,7 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
 
     private Map<String, Object> parseMap(String data) {
         try {
+            if (!StringUtils.hasText(data)) return new HashMap<>();
             return this.objectMapper.readValue(data, new TypeReference<Map<String, Object>>() {
             });
         } catch (Exception ex) {
